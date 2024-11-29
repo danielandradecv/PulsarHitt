@@ -1,74 +1,53 @@
-import { Image, StyleSheet, Platform } from 'react-native';
+import { Text, View, ImageBackground, StyleSheet } from 'react-native';
+import { Link } from 'expo-router'; 
+import '../../global.css';
 
-import { HelloWave } from '@/components/HelloWave';
-import ParallaxScrollView from '@/components/ParallaxScrollView';
-import { ThemedText } from '@/components/ThemedText';
-import { ThemedView } from '@/components/ThemedView';
-
-export default function HomeScreen() {
+export default function Index() {
   return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
-      headerImage={
-        <Image
-          source={require('@/assets/images/partial-react-logo.png')}
-          style={styles.reactLogo}
-        />
-      }>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Welcome!</ThemedText>
-        <HelloWave />
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 1: Try it</ThemedText>
-        <ThemedText>
-          Edit <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> to see changes.
-          Press{' '}
-          <ThemedText type="defaultSemiBold">
-            {Platform.select({
-              ios: 'cmd + d',
-              android: 'cmd + m',
-              web: 'F12'
-            })}
-          </ThemedText>{' '}
-          to open developer tools.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 2: Explore</ThemedText>
-        <ThemedText>
-          Tap the Explore tab to learn more about what's included in this starter app.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
-        <ThemedText>
-          When you're ready, run{' '}
-          <ThemedText type="defaultSemiBold">npm run reset-project</ThemedText> to get a fresh{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> directory. This will move the current{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> to{' '}
-          <ThemedText type="defaultSemiBold">app-example</ThemedText>.
-        </ThemedText>
-      </ThemedView>
-    </ParallaxScrollView>
+    <View className="flex-1 bg-gray-800 items-center justify-center">
+      <Text className="text-white mb-8 text-2xl">PulsarHitt</Text>
+      
+      {/* Enlace al Tab1 con imagen de fondo */}
+      <ImageBackground 
+        source={require('../../assets/images/tabata-timer-banner.jpg')} 
+        
+        className="w-10/12 h-64 p-4 mb-4 rounded-lg overflow-hidden flex"
+        imageStyle={{ borderRadius: 1 }}
+        resizeMode="cover" // Asegura que la imagen cubra el contenedor
+      >
+        <Link style={styles.container} href="/Tab1" className="text-center text-white font-bold">
+          Tabata 1
+        </Link>
+      </ImageBackground>
+      
+      {/* Enlace al Tab2 con imagen de fondo */}
+      <ImageBackground 
+        source={{ uri: 'https://www.example.com/imagen2.jpg' }} // Reemplaza con la URL de tu imagen
+        className="w-10/12 p-4 mb-4 rounded-lg overflow-hidden"
+        imageStyle={{ borderRadius: 10 }}
+      >
+        <Link href="/Tab2" className="flex-1 justify-center items-center bg-black bg-opacity-50 rounded-lg text-center text-white font-bold">
+          Tabata 2
+        </Link>
+      </ImageBackground>
+      
+      {/* Enlace al Tab3 con imagen de fondo */}
+      <ImageBackground 
+        source={{ uri: 'https://www.example.com/imagen3.jpg' }} // Reemplaza con la URL de tu imagen
+        className="w-10/12 p-4 mb-4 rounded-lg overflow-hidden"
+        imageStyle={{ borderRadius: 10 }}
+      >
+        <Link href="/Tab3" className="flex-1 justify-center items-center bg-black bg-opacity-50 rounded-lg text-center text-white font-bold">
+          Tabata 3
+        </Link>
+      </ImageBackground>
+    </View>
   );
 }
 
+
 const styles = StyleSheet.create({
-  titleContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
+  container: {
   },
-  stepContainer: {
-    gap: 8,
-    marginBottom: 8,
-  },
-  reactLogo: {
-    height: 178,
-    width: 290,
-    bottom: 0,
-    left: 0,
-    position: 'absolute',
-  },
+
 });
