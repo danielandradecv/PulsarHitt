@@ -1,53 +1,78 @@
 import { Text, View, ImageBackground, StyleSheet } from 'react-native';
 import { Link } from 'expo-router'; 
 import '../../global.css';
+import Banner from '../../components/banner';
 
 export default function Index() {
   return (
-    <View className="flex-1 bg-gray-800 items-center justify-center">
-      <Text className="text-white mb-8 text-2xl">PulsarHitt</Text>
-      
-      {/* Enlace al Tab1 con imagen de fondo */}
-      <ImageBackground 
-        source={require('../../assets/images/tabata-timer-banner.jpg')} 
+    <View className='flex-1 bg-green-600'>
+      <Text className="text-black text-center text-2xl">PulsarHitt</Text>
+
+
+      <View className="flex-1 md:flex-row md:flex-wrap bg-white items-center justify-center md:space-x-4 md:space-y-4 space-y-4">
+      <Banner
+        imageSource={require('../../assets/images/tabata-timer-banne-tabata.jpg')}
+        title="Tabata Timer"
+        link="/Tab1"
+      />
+
+<Banner
+        imageSource={require('../../assets/images/tabata-timer-banne-tabata.jpg')}
+        title="Tabata Timer"
+        link="/Tab1"
+      />
+
+  
+        {/* Primer Banner */}
+        <View className="w-10/12 h-40 rounded-3xl md:w-96 bg-black mb-4 md:mb-0">
+          <ImageBackground
+            source={require('../../assets/images/tabata-timer-banne-tabata.jpg')}
+            className="overflow-hidden"
+            style={{ width: '100%', height: '100%' }}
+            imageStyle={{ borderRadius: 20 }}
+            fadeDuration={700}
+            resizeMode="cover"
+          >
+            <Link href="/Tab1" className="  text-white font-bold text-2xl h-full py-16 w-full text-center">Tabata Timer</Link>
+          </ImageBackground>
+        </View>
+
+        {/* Segundo Banner */}
+        <View className="w-10/12 h-40 rounded-3xl md:w-96 bg-black mb-4 md:mb-0">
+          <ImageBackground
+            source={require('../../assets/images/tabata-timer-banne-tabata.jpg')}
+            className="overflow-hidden"
+            style={{ width: '100%', height: '100%' }}
+            imageStyle={{ borderRadius: 20 }}
+            fadeDuration={700}
+            resizeMode="cover"
+          >
+            <Link href="/Tab1" className="  text-white font-bold text-2xl h-full py-16 w-full text-center">Tabata Timer</Link>
+          </ImageBackground>
+        </View>
+
+        {/* Tercer Banner */}
+        <View className="w-10/12 h-40 rounded-3xl md:w-96 bg-black mb-4 md:mb-0">
+          <ImageBackground
+            source={require('../../assets/images/tabata-timer-banne-tabata.jpg')}
+            className="overflow-hidden"
+            style={{ width: '100%', height: '100%' }}
+            imageStyle={{ borderRadius: 20 }}
+            fadeDuration={700}
+            resizeMode="cover"
+          >
+            <Link href="/Tab1" className="  text-white font-bold text-2xl h-full py-16 w-full text-center">Tabata Timer</Link>
+          </ImageBackground>
+        </View>
         
-        className="w-10/12 h-64 p-4 mb-4 rounded-lg overflow-hidden flex"
-        imageStyle={{ borderRadius: 1 }}
-        resizeMode="cover" // Asegura que la imagen cubra el contenedor
-      >
-        <Link style={styles.container} href="/Tab1" className="text-center text-white font-bold">
-          Tabata 1
-        </Link>
-      </ImageBackground>
-      
-      {/* Enlace al Tab2 con imagen de fondo */}
-      <ImageBackground 
-        source={{ uri: 'https://www.example.com/imagen2.jpg' }} // Reemplaza con la URL de tu imagen
-        className="w-10/12 p-4 mb-4 rounded-lg overflow-hidden"
-        imageStyle={{ borderRadius: 10 }}
-      >
-        <Link href="/Tab2" className="flex-1 justify-center items-center bg-black bg-opacity-50 rounded-lg text-center text-white font-bold">
-          Tabata 2
-        </Link>
-      </ImageBackground>
-      
-      {/* Enlace al Tab3 con imagen de fondo */}
-      <ImageBackground 
-        source={{ uri: 'https://www.example.com/imagen3.jpg' }} // Reemplaza con la URL de tu imagen
-        className="w-10/12 p-4 mb-4 rounded-lg overflow-hidden"
-        imageStyle={{ borderRadius: 10 }}
-      >
-        <Link href="/Tab3" className="flex-1 justify-center items-center bg-black bg-opacity-50 rounded-lg text-center text-white font-bold">
-          Tabata 3
-        </Link>
-      </ImageBackground>
+      </View>
     </View>
   );
 }
 
-
 const styles = StyleSheet.create({
   container: {
+    borderColor: 'red',
+    
   },
-
 });

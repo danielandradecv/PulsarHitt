@@ -12,8 +12,9 @@
     "**/*.ts",
     "**/*.tsx",
     ".expo/types/**/*.ts",
-    "expo-env.d.ts",
+    "app/expo-env.d.ts",
     "app/nativewind-env.d.ts",
-    "nativewind-env.d.ts"
-  ]
+    "nativewind-env.d.ts",
+    "expo-env.d.ts"
+, "components/banner.js"  ]
 }
