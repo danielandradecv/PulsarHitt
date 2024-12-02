@@ -1,32 +1,31 @@
-import { Text, View, ImageBackground, StyleSheet } from 'react-native';
-import { Link } from 'expo-router'; 
+import {  View, StyleSheet } from 'react-native';
 import '../../global.css';
-import Banner from '../../components/banner';
+import CardComponent from '../../components/CardComponent';
 
 export default function Index() {
   return (
     <View className='flex-1 bg-green-600'>
-      <Text className="text-black text-center text-2xl">PulsarHitt</Text>
 
 
       <View className="flex-1 md:flex-row md:flex-wrap bg-white items-center justify-center md:space-x-4 ">
-      <Banner
-        imageSource={require('../../assets/images/tabata-timer-banne-tabata.jpg')}
+      <CardComponent
+        image={require('../../assets/images/tabata-timer-banne-tabata.jpg')} // Asegúrate de tener esta imagen en el directorio
         title="Tabata Timer"
-        link="/Tab1"
+        link="/Tab1" 
+      />
+      <CardComponent
+        image={require('../../assets/images/tabata-timer-banner.jpg')} // Asegúrate de tener esta imagen en el directorio
+        title="Tabata Super Hitt"
+        link="/Tab2" 
+      />
+      <CardComponent
+        image={require('../../assets/images/tabata-timer-banne-rest.jpg')} // Asegúrate de tener esta imagen en el directorio
+        title="Tiempo de descanso"
+        link="/Tab3" 
       />
 
-<Banner
-        imageSource={require('../../assets/images/tabata-timer-banner.jpg')}
-        title="Tabata Timer"
-        link="/Tab2"
-      />
+      
 
-<Banner
-        imageSource={require('../../assets/images/tabata-timer-banne-rest.jpg')}
-        title="Tabata Timer"
-        link="/Tab3"
-      />
 
   
         
