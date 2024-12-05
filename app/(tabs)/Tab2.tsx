@@ -1,9 +1,13 @@
 import { Text, View, StyleSheet } from 'react-native';
-
+import Prueba from '../../components/prueba';
 export default function Tab2() {
   return (
     <View style={styles.container}>
-      <Text style={styles.text}>3</Text>
+     
+        <Prueba></Prueba>
+
+      
+     
     </View>
   );
 }
@@ -11,7 +15,6 @@ export default function Tab2() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: 'red',
     justifyContent: 'center',
     alignItems: 'center',
   },

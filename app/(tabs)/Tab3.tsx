@@ -11,7 +11,7 @@ export default function Tab3() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: 'red',
+    backgroundColor: 'green',
     justifyContent: 'center',
     alignItems: 'center',
   },

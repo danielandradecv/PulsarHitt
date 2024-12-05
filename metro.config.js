@@ -1,6 +1,9 @@
-const { getDefaultConfig } = require("expo/metro-config");
-const { withNativeWind } = require('nativewind/metro');
+const { getDefaultConfig } = require('expo/metro-config');
 
-const config = getDefaultConfig(__dirname)
+const defaultConfig = getDefaultConfig(__dirname);
 
-module.exports = withNativeWind(config, { input: './global.css' })
+defaultConfig.transformer.babelTransformerPath = require.resolve('react-native-svg-transformer');
+
+defaultConfig.resolver.assetExts.push('svg');
+
+module.exports = defaultConfig;

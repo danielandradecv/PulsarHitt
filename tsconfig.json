@@ -14,7 +14,10 @@
     ".expo/types/**/*.ts",
     "app/expo-env.d.ts",
     "app/nativewind-env.d.ts",
-    "nativewind-env.d.ts",
-    "expo-env.d.ts"
-, "components/banner.js"  ]
+    "react.d.ts",
+    "expo-env.d.ts",
+    "components/banner.js",
+    "index.d.ts",
+    "nativewind-env.d.ts"
+, "components/Preload.js"  ]
 }
