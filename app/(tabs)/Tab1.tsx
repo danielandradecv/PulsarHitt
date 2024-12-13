@@ -2,17 +2,117 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Text, View, StyleSheet, TouchableOpacity, ScrollView, Modal } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import * as Font from 'expo-font';
-import Flame from '../../components/Flame';
-import CardComponent from '@/components/CardComponent';
+import { Audio } from 'expo-av';
 
 
 
 
 const AboutScreen = () => {
+  const [sound, setSound] = useState<Audio.Sound | null>(null);
   const [fontsLoaded, setFontsLoaded] = useState(false);
 
-const [modalVisible, setModalVisible] = useState(false);
- 
+  const [modalVisible, setModalVisible] = useState(false);
+  const [counter, setCounter] = useState(3); // Inicia el conteo en 3
+
+  const countdownRef = useRef<NodeJS.Timeout | null>(null); // Referencia para el temporizador de cuenta regresiva
+
+  // Establecer el modo de audio para permitir sonidos mientras está en segundo plano
+  useEffect(() => {
+    const setAudioMode = async () => {
+      try {
+        await Audio.setAudioModeAsync({
+          allowsRecordingIOS: false,
+          playsInSilentModeIOS: true,
+          staysActiveInBackground: true,
+        });
+      } catch (error) {
+        console.error('Error al configurar el audio:', error);
+      }
+    };
+
+    setAudioMode();
+
+    return () => {
+      if (sound) {
+        sound.unloadAsync();
+      }
+      if (countdownRef.current) {
+        clearInterval(countdownRef.current);
+      }
+    };
+  }, [sound]);
+
+  
+
+  // Función para iniciar el conteo
+  const counterRef = useRef(counter);
+  const startCountdown = () => {
+    setCounter(3); // Resetea el contador a 3
+    counterRef.current = 3; // Actualiza la referencia del contador
+  
+    countdownRef.current = setInterval(() => {
+      if (counterRef.current > 0) {
+        playSound('beep'); // Sonido para 3, 2, 1
+        counterRef.current -= 1; // Decrementa la referencia del contador
+        setCounter(counterRef.current); // Actualiza el estado del contador
+      } else {
+        clearInterval(countdownRef.current as NodeJS.Timeout); // Detener el intervalo
+        playSound('final'); // Sonido final al terminar la cuenta regresiva
+        setCounter(0); // Finaliza la cuenta regresiva
+      }
+    }, 100); // Actualizar cada 1 segundo
+  };
+  
+  // Función que se ejecuta cuando el modal es mostrado
+  const handleOnShow = () => {
+    startCountdown(); // Iniciar el contador cuando el modal se abre
+  };
+
+
+// Configurar el modo de audio al iniciar el componente
+useEffect(() => {
+  const setAudioMode = async () => {
+    try {
+      await Audio.setAudioModeAsync({
+        allowsRecordingIOS: false, // No grabar audio en iOSrr // Usar el valor correcto del enum
+        playsInSilentModeIOS: true, // Reproducir sonidos incluso si el dispositivo está en silencio
+        staysActiveInBackground: true, // Mantener el sonido activo cuando la app está en segundo plano
+      });
+    } catch (error) {
+      console.error('Error al configurar el audio:', error);
+    }
+  };
+
+  setAudioMode();
+
+  return () => {
+    if (sound) {
+      sound.unloadAsync(); // Liberar el sonido cuando el componente se desmonte
+    }
+  };
+}, [sound]);
+
+// Función para reproducir el sonido
+const playSound = async (soundFile: string) => {
+  try {
+    const { sound: newSound } = await Audio.Sound.createAsync(
+      require(`../../assets/sounds/pop.mp3`) // Asegúrate de que los archivos MP3 estén en la ruta correcta
+    );
+    setSound(newSound); // Establecer el sonido cargado en el estado
+    await newSound.playAsync(); // Reproducir el sonido
+  } catch (error) {
+    console.error('Error al reproducir el sonido:', error);
+  }
+};
+ // Cargar sonidos
+
+
+ // Función para reproducir el sonido al abrir el modal
+
+
+
+
+
   // Establecemos valores por defecto para los tiempos
   const [workTime, setWorkTime] = useState(18); // tiempo de trabajo en segundos
   const [restTime, setRestTime] = useState(14); // tiempo de descanso en segundos
@@ -125,7 +225,9 @@ const [modalVisible, setModalVisible] = useState(false);
     <ScrollView style={styles.container}>
       
       {/* -------------------------------------------Aqui va el Tiempo final--------------------------------------------------------------------------------------*/}
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
       
+    </View>
 
       <View style={styles.summaryContainer}>
         <View>
@@ -266,55 +368,75 @@ const [modalVisible, setModalVisible] = useState(false);
   
     {/* ------------------------------------------------------------------------Boton Start-------------------------------------------------------------------------*/}
 
-      <View style={[styles.editContainer, { backgroundColor: 'black'}]}>
+    <View style={[styles.editContainer, { backgroundColor: 'black' }]}>
       <Modal
-          animationType="slide"
-          transparent={true}
-          visible={modalVisible}
-          onRequestClose={() => {
-            setModalVisible(!modalVisible);
-          }}>
-          <View style={{backgroundColor:'rgba(0, 0, 0, 0.8)', flex: 1, justifyContent: 'center', alignItems: 'center',}}>
-            <View style={{
-    margin: 20,
-    backgroundColor: 'white',
-    borderRadius: 20,
-    padding: 18,
-    alignItems: 'center',
-    shadowColor: '#000',
-    width:'90%',
-    height:'80%',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-      
-    },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
-    elevation: 5,}}>
-      <View style={{  alignItems: 'flex-end', width:'100%' }}>
-        
-        <TouchableOpacity
-                style={{ backgroundColor: '#2196F3',borderRadius: 50, width:40, height:40, padding: 10, alignItems: 'center' }}
-                onPress={() => setModalVisible(!modalVisible)}>
-                <Text style={{color: 'white',fontWeight: 'bold', textAlign: 'right',}}>x</Text>
+        animationType="slide"
+        transparent={true}
+        visible={modalVisible}
+        onShow={handleOnShow} 
+        onRequestClose={() => {
+          setModalVisible(!modalVisible);
+        }} 
+      >
+        <View
+          style={{
+            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+            flex: 1,
+            justifyContent: 'center',
+            alignItems: 'center',
+          }}
+        >
+          <View
+            style={{
+              margin: 20,
+              backgroundColor: 'white',
+              borderRadius: 20,
+              padding: 18,
+              alignItems: 'center',
+              shadowColor: '#000',
+              width: '90%',
+              height: '80%',
+              shadowOffset: { width: 0, height: 2 },
+              shadowOpacity: 0.25,
+              shadowRadius: 4,
+              elevation: 5,
+            }}
+          >
+            <View style={{ alignItems: 'flex-end', width: '100%' }}>
+              <TouchableOpacity
+                style={{
+                  backgroundColor: '#2196F3',
+                  borderRadius: 50,
+                  width: 40,
+                  height: 40,
+                  padding: 10,
+                  alignItems: 'center',
+                }}
+                onPress={() => setModalVisible(false)}
+              >
+                <Text style={{ color: 'white', fontWeight: 'bold', textAlign: 'right' }}>x</Text>
               </TouchableOpacity>
-        </View>
-              <CardComponent
-        image={require('../../assets/images/tabata-timer-banne-tabata.jpg')} // Asegúrate de tener esta imagen en el directorio
-        title="Tabata Timer"
-        link="/Tab1" 
-        />
+              <Text style={{ fontSize: 100, fontWeight: 'bold', color: 'black' }}>{counter}</Text>
             </View>
           </View>
-        </Modal>
-      <TouchableOpacity 
-              onPressIn={() => setModalVisible(true)}
-              style={{display:'flex', alignItems:'center', justifyContent:'center', backgroundColor:'#ffbb00', width:320, height:70, borderRadius:40, marginTop:20,}}>
-              <Text style={{color: 'white', fontSize:30,}}>Start</Text>
-            </TouchableOpacity>
-          
-      </View>
+        </View>
+      </Modal>
+      <TouchableOpacity
+        onPressIn={() => setModalVisible(true)}
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          backgroundColor: '#ffbb00',
+          width: 320,
+          height: 70,
+          borderRadius: 40,
+          marginTop: 20,
+        }}
+      >
+        <Text style={{ color: 'white', fontSize: 30 }}>Start</Text>
+      </TouchableOpacity>
+    </View>
     </ScrollView>
   );
 };
@@ -443,3 +565,7 @@ const styles = StyleSheet.create({
 });
 
 export default AboutScreen;
+function setSound(sound: Audio.Sound) {
+  throw new Error('Function not implemented.');
+}
+
