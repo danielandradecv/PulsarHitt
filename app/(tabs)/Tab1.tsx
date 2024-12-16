@@ -6,6 +6,8 @@ import TotalTime from '@/components/Total';
 import TimeControl from '@/components/TimeControl';
 import CardInactive from '@/components/CardInactive';
 import SaveContainer from '@/components/SaveContainer';
+import ViewInfo from '@/components/ViewInfo';
+import Resumen from '@/components/Resumen';
 import SaveInfo from '@/components/SaveInfo';
 
 
@@ -91,9 +93,15 @@ const TabataTimer: React.FC  = () => {
 
   const [triggerSignal, setTriggerSignal] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
+  const [modalVisibleSave, setModalVisibleSave] = useState(false);
+
 
   const toggleModal = () => {
     setModalVisible(!modalVisible);
+  };
+
+  const toggleModalSave = () => {
+    setModalVisibleSave(!modalVisibleSave);
   };
 
   // Función que se activa al presionar el botón
@@ -140,8 +148,18 @@ const TabataTimer: React.FC  = () => {
         rounds={rounds}
         sets={sets}
         restSet={restSet} 
-        formatTime={formatTime}
+        fontSize={50}
+        fontSizeNumber={85}
         textColor="white"/>
+
+<Resumen workTime={workTime}
+        restTime={restTime}
+        rounds={rounds}
+        sets={sets}
+        restSet={restSet} 
+        formatTime={formatTime}
+        textColor="#ffffff"
+        fontSize={20}/>
 
     {/* -------------------------------------------Aqui va el reset y save--------------------------------------------------------------------------------------*/}
 
@@ -149,8 +167,7 @@ const TabataTimer: React.FC  = () => {
     <View style={{  marginTop: 10, marginRight: 280, marginBottom: 10, flex: 1, flexDirection: 'row', display: 'flex', alignItems: 'center', justifyContent: 'center', alignContent: 'center', flexWrap: 'wrap' }}>
   {/* Botón para disminuir */}
   <TouchableOpacity
-    onPressIn={ resetValues} // Cambiado a false para disminuir
-    
+    onPress={toggleModalSave}
     style={styles.buttonSaveRest}>
     <Ionicons name="save" size={24} color="#000000" />
   </TouchableOpacity>
@@ -214,7 +231,7 @@ const TabataTimer: React.FC  = () => {
     <View style={[styles.editContainer, styles.overlayArea, { backgroundColor: 'black' }]}>
       
       <TouchableOpacity
-      onPress={toggleModal}
+      
         
         style={{
           display: 'flex',
@@ -238,30 +255,30 @@ const TabataTimer: React.FC  = () => {
     
     <View style={styles.editContainerSave}>
       <SaveContainer label="Control Time"
-       triggerSignal={triggerSignal} onSignalHandled={() => setTriggerSignal(false)}
+       triggerSignal={triggerSignal} onSignalHandled={() => setTriggerSignal(false) } toggleModal={toggleModal}
       
       
         
         ></SaveContainer>
         <SaveContainer label="Cardio piernas"
-        triggerSignal={triggerSignal} onSignalHandled={() => setTriggerSignal(false)}
+        triggerSignal={triggerSignal} onSignalHandled={() => setTriggerSignal(false)}toggleModal={toggleModal}
       
       
         
         ></SaveContainer>
         <SaveContainer label="full body"
-        triggerSignal={triggerSignal} onSignalHandled={() => setTriggerSignal(false)}
+        triggerSignal={triggerSignal} onSignalHandled={() => setTriggerSignal(false)}toggleModal={toggleModal}
      
         ></SaveContainer>
         <SaveContainer label="salto de cuerda pesado"
-        triggerSignal={triggerSignal} onSignalHandled={() => setTriggerSignal(false)}
+        triggerSignal={triggerSignal} onSignalHandled={() => setTriggerSignal(false)}toggleModal={toggleModal}
       
       
         
         ></SaveContainer>
 
 <SaveContainer label="Control"
-       triggerSignal={triggerSignal} onSignalHandled={() => setTriggerSignal(false)}
+       triggerSignal={triggerSignal} onSignalHandled={() => setTriggerSignal(false)}toggleModal={toggleModal}
       
       
         
@@ -270,16 +287,13 @@ const TabataTimer: React.FC  = () => {
         
       
 
-      <CardInactive label='free'></CardInactive>
-      <CardInactive label='free'></CardInactive>
-      <CardInactive label='free'></CardInactive>
-      <CardInactive label='free'></CardInactive>
-      <CardInactive label='free'></CardInactive>
-      <CardInactive label='free'></CardInactive>
-      <CardInactive label='free'></CardInactive>
-      <CardInactive label='free'></CardInactive>
-      <CardInactive label='free'></CardInactive>
-      <CardInactive label='free'></CardInactive>
+      <CardInactive label='free' toggleModalSave={toggleModalSave}></CardInactive>
+      <CardInactive label='free' toggleModalSave={toggleModalSave}></CardInactive>
+      <CardInactive label='free' toggleModalSave={toggleModalSave}></CardInactive>
+      <CardInactive label='free' toggleModalSave={toggleModalSave}></CardInactive>
+      <CardInactive label='free' toggleModalSave={toggleModalSave}></CardInactive>
+      <CardInactive label='free' toggleModalSave={toggleModalSave}></CardInactive>
+      
 
 
     </View>
@@ -288,14 +302,72 @@ const TabataTimer: React.FC  = () => {
 
 
     <Modal
-        animationType="slide"
+        animationType="fade"
         transparent={true}
         visible={modalVisible}
         onRequestClose={toggleModal}
       >
+    <TouchableWithoutFeedback onPress={toggleModal}>
         <View style={styles.modalOverlay}>
-          <SaveInfo />
+          <TouchableWithoutFeedback onPress={(e) => e.stopPropagation()}>
+          <View style={{backgroundColor:'white', }}>
+            <View style={{ marginTop:10, marginRight:10, display: 'flex', alignItems: 'center', flexDirection:'row', justifyContent:'flex-end'}}>
+          <TouchableOpacity style={{display:'flex', alignItems:'center', width:40}} onPress={toggleModal}><Ionicons name="pencil" size={30} color="#000000" /></TouchableOpacity>
+          <TouchableOpacity style={{display:'flex', alignItems:'center', width:40}} onPress={toggleModal}><Ionicons name="close" size={40} color="#000000" /></TouchableOpacity>
+            </View>
+            
+          <ViewInfo workTime={workTime}
+        restTime={restTime}
+        rounds={rounds}
+        sets={sets}
+        restSet={restSet} 
+        fontSize={50}
+        textColor="#000000"
+        formatTime={formatTime}
+        formatTime2={formatTime2}
+        />
+          </View>
+        </TouchableWithoutFeedback>
         </View>
+      </TouchableWithoutFeedback>
+      </Modal>
+
+      <Modal
+        animationType="fade"
+        transparent={true}
+        visible={modalVisibleSave}
+        onRequestClose={toggleModalSave}
+      >
+    <TouchableWithoutFeedback onPress={toggleModalSave}>
+        <View style={styles.modalOverlay}>
+          <TouchableWithoutFeedback onPress={(e) => e.stopPropagation()}>
+          <View style={{backgroundColor:'#00538a', }}>
+            <View style={{ marginTop:10, marginRight:10, display: 'flex', alignItems: 'center', flexDirection:'row', justifyContent:'flex-end'}}>
+          <TouchableOpacity style={{display:'flex', alignItems:'center', width:40}} onPress={toggleModalSave}><Ionicons name="close" size={40} color="#000000" /></TouchableOpacity>
+            </View>
+            
+          <SaveInfo workTime={workTime}
+                  restTime={restTime}
+                  rounds={rounds}
+                  sets={sets}
+                  restSet={restSet}
+                  fontSize={50}
+                  textColor="#ffffff"
+                  formatTime={formatTime}
+                  formatTime2={formatTime2}
+                  handleRelease={handleRelease}
+                  onPressWorkTime={(isIncrement: boolean) => handlePress('work', isIncrement)}  
+                  onPressRest={(isIncrement: boolean) => handlePress('rest', isIncrement)}
+                  onPressRounds={(isIncrement: boolean) => handlePress('rounds', isIncrement)}
+                  onPressSet={(isIncrement: boolean) => handlePress('sets', isIncrement)}
+                  onPressRestSet={(isIncrement: boolean) => handlePress('restSet', isIncrement)}
+
+                  
+        />
+          </View>
+        </TouchableWithoutFeedback>
+        </View>
+      </TouchableWithoutFeedback>
       </Modal>
     </ScrollView>
 
@@ -360,7 +432,8 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.5)', // Fondo semi-transparente
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+    
   },
   
 });

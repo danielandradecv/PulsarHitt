@@ -1,18 +1,18 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 
-interface TimeControlProps {
+interface InactiveCardProps {
   label: string;
-  
+  toggleModalSave: () => void;
 }
 
-const TimeControl: React.FC<TimeControlProps> = ({ label,  }) => {
+const InactiveCard: React.FC<InactiveCardProps> = ({ label, toggleModalSave  }) => {
   return (
     
     <View style={styles.timeBox}>
       <Text style={styles.label}>{label}</Text>
         
-        <TouchableOpacity style={{backgroundColor:'rgba(0, 0, 0, 0.4)', width:100, height:60, borderRadius:50, justifyContent:'center', alignItems:'center', // Sombra para iOS
+        <TouchableOpacity onPress={toggleModalSave} style={{backgroundColor:'rgba(0, 0, 0, 0.4)', width:100, height:60, borderRadius:50, justifyContent:'center', alignItems:'center', // Sombra para iOS
     shadowColor: '#ffffff',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.8,
@@ -88,4 +88,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default TimeControl;
+export default InactiveCard;

@@ -6,9 +6,10 @@ interface TimeControlProps {
   label: string;
   triggerSignal: boolean;
   onSignalHandled: () => void;
+  toggleModal: () => void;
 }
 
-const TimeControl: React.FC<TimeControlProps> = ({ label,  triggerSignal, onSignalHandled }) => {
+const TimeControl: React.FC<TimeControlProps> = ({ label,  triggerSignal, onSignalHandled, toggleModal }) => {
 
     
   useEffect(() => {
@@ -62,7 +63,7 @@ const TimeControl: React.FC<TimeControlProps> = ({ label,  triggerSignal, onSign
       <Text style={styles.label}>{label}</Text>
 
       <View style={styles.buttonRow}>
-        <TouchableOpacity style={[styles.button, { backgroundColor: '#003161' }]}>
+        <TouchableOpacity onPress={toggleModal} style={[styles.button, { backgroundColor: '#003161' }]}>
           <Text style={styles.buttonText}>View</Text>
         </TouchableOpacity>
       </View>

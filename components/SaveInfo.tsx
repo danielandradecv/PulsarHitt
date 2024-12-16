@@ -1,113 +1,142 @@
-// SaveInfo.tsx
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, TextInput } from 'react-native';
+import Resumen from './Resumen';
 import TotalTime from './Total';
-import ViewControls from './ViewControls';
+import TimeControl from './TimeControl';
 
-const SaveInfo: React.FC = () => {
-     const [workTime, setWorkTime] = useState(18); 
-      const [restTime, setRestTime] = useState(14); 
-      const [rounds, setRounds] = useState(4); 
-      const [sets, setSets] = useState(1); // 
-      const [restSet, setRestSet] = useState(24);
+interface SaveInfoProps {
+  workTime: number;
+  restTime: number;
+  rounds: number;
+  sets: number;
+  restSet: number;
+  formatTime: (time: number) => string;
+  formatTime2: (time: number) => string;
 
-        // darle formato de s en segundos y m en minutos
-  const formatTime = (time: number) => {
-    if (time >= 60) {
-      const minutes = Math.floor(time / 60);
-      const seconds = time % 60;
-      return `${minutes}m ${seconds < 10 ? '0' + seconds : seconds}s`;
-    }
-    return `${time}s`;
+  textColor?: string;
+  fontSize?: number;
+  handleRelease: () => void;
+  onPressRest: (isIncrement: boolean) => void;
+  onPressWorkTime: (isIncrement: boolean) => void;
+  onPressRounds: (isIncrement: boolean) => void;
+  onPressSet: (isIncrement: boolean) => void;
+  onPressRestSet: (isIncrement: boolean) => void;
+}
+
+const SaveInfo: React.FC<SaveInfoProps> = ({
+  workTime,
+  restTime,
+  rounds,
+  sets,
+  restSet,
+  formatTime,
+  formatTime2,
+  handleRelease,
+  onPressWorkTime,
+  onPressRest,
+  onPressRounds,
+  onPressSet,
+  onPressRestSet,
+}) => {
+  const [text, setText] = useState('');
+
+  const handleChange = (input: React.SetStateAction<string>) => {
+    setText(input);
   };
-  
-  const formatTime2 = (time: number) => {
-    if (time >= 60) {
-      const minutes = Math.floor(time / 60);
-      const seconds = time % 60;
-      return `${minutes} ${seconds < 10 ? '0' + seconds : seconds}`;
-    }
-    return `${time}`;
-  };
-  const totalTrainingTime = sets === 0 
-    ? (workTime + restTime) * rounds // Si sets es 0, solo se considera (workTime + restTime) * rounds
-    : ((workTime + restTime) * rounds) * sets + restSet * (sets - 1);
-
-
-  const formatTimeTotal = (time: number) => {
-        if (time >= 60) {
-          const minutes = Math.floor(time / 60);
-          const seconds = time % 60;
-          return <><Text style={{fontFamily:'type2', width:300, height:300 }}>{minutes}</Text><Text style={{fontFamily:'type2', fontSize:40}}>m </Text ><Text style={{fontFamily:'type2' }}>{seconds < 10 ? '0' + seconds : seconds}</Text><Text style={{fontFamily:'type2', fontSize:40}}>s</Text></>;
-        }
-        return <><Text style={{fontFamily:'type2', width:300, height:300 }}>{time}</Text><Text style={{fontFamily:'type2', fontSize:40}}>s</Text ></> ;
-      };
-
-
 
   return (
     <View style={styles.modalContent}>
-        <Text style={{fontFamily:'type2',fontSize:50}}>Tabata timer</Text>
-                    <Text style={[ { fontSize: 90,  fontFamily: 'type', textTransform: 'lowercase' }]}>
-                      {formatTimeTotal(totalTrainingTime)}
-                    </Text>
-      
+      {/* Título "Title" con un diseño separado del input */}
+      <Text style={styles.titleText}>Title:</Text>
 
-<View style={{flexDirection:'row', display:'flex'}}>
-<ViewControls
-        label="Work"
-        time={workTime}
+      <View style={styles.titleContainer}>
+        <TextInput
+          style={styles.input}
+          placeholder="Enter your title here"
+          placeholderTextColor="#000"  // Placeholder en negro
+          value={text}
+          onChangeText={handleChange}
+        />
+      </View>
+
+      <TotalTime
+        workTime={workTime}
+        restTime={restTime}
+        rounds={rounds}
+        sets={sets}
+        restSet={restSet}
+        fontSize={40}
+        fontSizeNumber={65}
+        textColor="#ffffff"
+      />
+
+      <Resumen
+        workTime={workTime}
+        restTime={restTime}
+        rounds={rounds}
+        sets={sets}
+        restSet={restSet}
         formatTime={formatTime}
-      />
-<ViewControls
-    label="Rest"
-    time={restTime}
-    formatTime={formatTime2}
-    />
-      <ViewControls
-        label="Rounds"
-        time={rounds}
-        
-        formatTime={formatTime2}
+        textColor="#ffffff"
+        fontSize={20}
       />
 
-</View>
+      <View style={{ flexDirection: 'row', display: 'flex' }}>
+        <TimeControl
+          label="Work"
+          time={workTime}
+          onPress={onPressWorkTime}
+          onRelease={handleRelease}
+          formatTime={formatTime}
+        />
+        <TimeControl
+          label="Rest"
+          time={restTime}
+          onPress={onPressRest}
+          onRelease={handleRelease}
+          formatTime={formatTime}
+        />
+        <TimeControl
+          label="Rounds"
+          time={rounds}
+          onPress={onPressRounds}
+          onRelease={handleRelease}
+          formatTime={formatTime2}
+        />
+      </View>
 
-<View style={{flexDirection:'row', display:'flex'}}>
-<ViewControls
-        label="Sets"
-        time={sets}
-        
-        formatTime={formatTime2}
-      />
-      <ViewControls
-        label="Rest Sets"
-        time={restSet}
-      
-        formatTime={formatTime}
-      />
+      <View style={{ flexDirection: 'row', display: 'flex' }}>
+        <TimeControl
+          label="Sets"
+          time={sets}
+          onPress={onPressSet}
+          onRelease={handleRelease}
+          formatTime={formatTime2}
+        />
+        <TimeControl
+          label="Rest Sets"
+          time={restSet}
+          onPress={onPressRestSet}
+          onRelease={handleRelease}
+          formatTime={formatTime}
+        />
+      </View>
 
-</View>
-
-    <TouchableOpacity
-         
-            
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              backgroundColor: '#ffbb00',
-              width: 320,
-              height: 70,
-              borderRadius: 40,
-              marginTop: 20,
-            }}
-          >
-            <Text style={{ color: 'white', fontSize: 30, fontFamily:'type1' }}>Start</Text>
-          </TouchableOpacity>  
-          
+      <TouchableOpacity
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          backgroundColor: '#00974c',
+          width: 320,
+          height: 70,
+          borderRadius: 40,
+          marginTop: 20,
+        }}
+      >
+        <Text style={{ color: 'white', fontSize: 30, fontFamily: 'type1' }}>Save</Text>
+      </TouchableOpacity>
     </View>
-    
   );
 };
 
@@ -115,27 +144,31 @@ const styles = StyleSheet.create({
   modalContent: {
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#ffffff',
     padding: 20,
     borderRadius: 10,
     width: 'auto',
     height: 'auto',
   },
-  text: {
-    fontSize: 18,
-    marginBottom: 20,
+  titleText: {
+    fontSize: 30, // Título grande
+    marginBottom: 10,
+    fontFamily: 'type2',
+    color: '#ffffff',
   },
-  button: {
-    marginTop: 10,
-    padding: 10,
-    backgroundColor: '#4CAF50',
-    borderRadius: 5,
+  titleContainer: {
+    backgroundColor: 'white',
+    alignItems: 'center',
+    marginBottom: 20, // Separar un poco del resto de los componentes
   },
-  buttonText: {
-    color: 'white',
-    fontSize: 16,
+  input: {
+    width: 280,
+    textAlign:'center',
+    height: 40,
+    borderColor: 'gray',
+    borderWidth: 1,
+    paddingLeft: 10,
+    color: 'black', // Texto en negro
   },
-
 });
 
 export default SaveInfo;

@@ -1,13 +1,13 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 
-interface TimeControlProps {
+interface ViewControlsProps {
   label: string;
   time: number;
   formatTime: (time: number) => string;
 }
 
-const TimeControl: React.FC<TimeControlProps> = ({ label, time, formatTime }) => {
+const ViewControlsProps: React.FC<ViewControlsProps> = ({ label, time, formatTime }) => {
   return (
     
     <View style={styles.timeBox}>
@@ -90,4 +90,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default TimeControl;
+export default ViewControlsProps;
