@@ -39,7 +39,7 @@ const styles = StyleSheet.create({
   timeBox: {
     backgroundColor: '#ffff',
     width: 110,
-    margin: 8,
+    margin: 3,
     padding: 5,
     borderRadius: 10,
     flexDirection: 'column',

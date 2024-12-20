@@ -1,21 +1,31 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Text, View, StyleSheet, TouchableOpacity, ScrollView, Modal, TouchableWithoutFeedback } from 'react-native';
+import { Text, View, StyleSheet, TouchableOpacity, ScrollView, Modal, TouchableWithoutFeedback, Alert } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import * as Font from 'expo-font';
 import TotalTime from '@/components/Total';
 import TimeControl from '@/components/TimeControl';
 import CardInactive from '@/components/CardInactive';
 import SaveContainer from '@/components/SaveContainer';
-import ViewInfo from '@/components/ViewInfo';
 import Resumen from '@/components/Resumen';
 import SaveInfo from '@/components/SaveInfo';
-
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 
 
 const TabataTimer: React.FC  = () => {
 
+  useEffect(() => {
+    AsyncStorage.getItem('workouts').then((data) => {
+      if (data) {
+        console.log(JSON.parse(data)); // Muestra los datos almacenados si existen
+      } else {
+        console.log('No hay entrenamientos guardados'); // Manejo de null
+      }
+    });
+  }, []);
+
   // Valores por defecto para los tiempos, el tiempo es mi tabta favorito ejej
+  const [prepare, setPrepare] = useState(3); 
   const [workTime, setWorkTime] = useState(18); 
   const [restTime, setRestTime] = useState(14); 
   const [rounds, setRounds] = useState(4); 
@@ -24,6 +34,7 @@ const TabataTimer: React.FC  = () => {
 
  // Boton de reset Values
   const resetValues = () => {
+  setPrepare(0);
   setWorkTime(0);
   setRestTime(0);
   setRounds(1);
@@ -60,6 +71,9 @@ const TabataTimer: React.FC  = () => {
     
     // Función que incrementa o decrementa el valor según el tipo
     const updateValue = () => {
+      if (type === 'prepare') {
+        if (prepare > 0 || increment > 0) setPrepare(prev => Math.max(prev + increment, 0)); // Evitar valores negativos
+      }
       if (type === 'work') {
         if (workTime > 0 || increment > 0) setWorkTime(prev => Math.max(prev + increment, 0)); // Evitar valores negativos
       }
@@ -92,13 +106,10 @@ const TabataTimer: React.FC  = () => {
 
 
   const [triggerSignal, setTriggerSignal] = useState(false);
-  const [modalVisible, setModalVisible] = useState(false);
   const [modalVisibleSave, setModalVisibleSave] = useState(false);
 
 
-  const toggleModal = () => {
-    setModalVisible(!modalVisible);
-  };
+
 
   const toggleModalSave = () => {
     setModalVisibleSave(!modalVisibleSave);
@@ -108,6 +119,61 @@ const TabataTimer: React.FC  = () => {
   const handleButtonPress = () => {
     setTriggerSignal(true);
   };
+
+
+// logica del save
+
+interface Workout {
+  title: string;
+  prepare: number;
+  workTime: number;
+  restTime: number;
+  rounds: number;
+  sets: number;
+  restSet: number;
+}
+
+const [workouts, setWorkouts] = useState<Workout[]>([]);
+  
+
+  const fetchWorkouts = async () => {
+    try {
+      const storedWorkouts = await AsyncStorage.getItem('workouts');
+      setWorkouts(storedWorkouts ? JSON.parse(storedWorkouts) : []);
+    } catch (error) {
+      console.error('Failed to load workouts:', error);
+    }
+  };
+
+  const handleSaveComplete = () => {
+    fetchWorkouts(); // Recargar los entrenamientos después de guardar uno nuevo
+    setModalVisibleSave(false);
+  };
+
+  const handleDelete = async (index: number): Promise<void> => {
+    try {
+      const updatedWorkouts = workouts.filter((_, i) => i !== index);
+      await AsyncStorage.setItem('workouts', JSON.stringify(updatedWorkouts));
+      setWorkouts(updatedWorkouts);
+      alert('deleted!');
+    } catch (error) {
+      console.error('Failed to delete workout:', error);
+      Alert.alert('Error', 'Failed to delete the workout. Please try again.');
+    }
+  };
+  
+
+
+  useEffect(() => {
+    fetchWorkouts();
+  }, []);
+  
+
+
+
+
+
+
 
 
   // Tipografia
@@ -143,6 +209,7 @@ const TabataTimer: React.FC  = () => {
       {/* -------------------------------------------Aqui va el Tiempo final--------------------------------------------------------------------------------------*/}
       
       <TotalTime
+        prepare={prepare}
         workTime={workTime}
         restTime={restTime}
         rounds={rounds}
@@ -152,7 +219,9 @@ const TabataTimer: React.FC  = () => {
         fontSizeNumber={85}
         textColor="white"/>
 
-<Resumen workTime={workTime}
+<Resumen
+        prepare={prepare}
+        workTime={workTime}
         restTime={restTime}
         rounds={rounds}
         sets={sets}
@@ -164,7 +233,7 @@ const TabataTimer: React.FC  = () => {
     {/* -------------------------------------------Aqui va el reset y save--------------------------------------------------------------------------------------*/}
 
 
-    <View style={{  marginTop: 10, marginRight: 280, marginBottom: 10, flex: 1, flexDirection: 'row', display: 'flex', alignItems: 'center', justifyContent: 'center', alignContent: 'center', flexWrap: 'wrap' }}>
+    <View style={{  marginTop: 10, marginRight: 280, marginBottom: 1, flex: 1, flexDirection: 'row', display: 'flex', alignItems: 'center', justifyContent: 'center', alignContent: 'center', flexWrap: 'wrap' }}>
   {/* Botón para disminuir */}
   <TouchableOpacity
     onPress={toggleModalSave}
@@ -181,6 +250,16 @@ const TabataTimer: React.FC  = () => {
 </View>
 
       {/*} ---------------------------------------------------------------------------Contadores----------------------------------------------------------------------------------------------*/}
+
+        <View style={styles.editContainer}>
+      <TimeControl
+        label="Prepare"
+        time={prepare}
+        onPress={(isIncrement: boolean) => handlePress('prepare', isIncrement)}
+        onRelease={handleRelease}
+        formatTime={formatTime}
+      />
+      </View>
 
       <View style={styles.editContainer}>
       <TimeControl
@@ -254,83 +333,43 @@ const TabataTimer: React.FC  = () => {
         
     
     <View style={styles.editContainerSave}>
-      <SaveContainer label="Control Time"
-       triggerSignal={triggerSignal} onSignalHandled={() => setTriggerSignal(false) } toggleModal={toggleModal}
-      
-      
-        
-        ></SaveContainer>
-        <SaveContainer label="Cardio piernas"
-        triggerSignal={triggerSignal} onSignalHandled={() => setTriggerSignal(false)}toggleModal={toggleModal}
-      
-      
-        
-        ></SaveContainer>
-        <SaveContainer label="full body"
-        triggerSignal={triggerSignal} onSignalHandled={() => setTriggerSignal(false)}toggleModal={toggleModal}
-     
-        ></SaveContainer>
-        <SaveContainer label="salto de cuerda pesado"
-        triggerSignal={triggerSignal} onSignalHandled={() => setTriggerSignal(false)}toggleModal={toggleModal}
-      
-      
-        
-        ></SaveContainer>
 
-<SaveContainer label="Control"
-       triggerSignal={triggerSignal} onSignalHandled={() => setTriggerSignal(false)}toggleModal={toggleModal}
-      
-      
         
-        ></SaveContainer>
-       
         
+      {workouts.map((workout, index) => (
+          <SaveContainer
+            key={index}
+            label={workout.title} // Título del entrenamiento
+            prepare={workout.prepare} 
+            restTime={workout.restTime}
+            workTime={workout.workTime}
+            rounds={workout.rounds}
+            sets={workout.sets}
+            restSet={workout.restSet}
+            toggleModal={() => console.log('Ver entrenamiento:', workout)} 
+            onSignalHandled={() => setTriggerSignal(false) } 
+            triggerSignal={triggerSignal}
+            formatTime={formatTime}
+            formatTime2={formatTime2}
+            onDelete={() => handleDelete(index)}
+          />
+        ))} 
       
 
-      <CardInactive label='free' toggleModalSave={toggleModalSave}></CardInactive>
-      <CardInactive label='free' toggleModalSave={toggleModalSave}></CardInactive>
-      <CardInactive label='free' toggleModalSave={toggleModalSave}></CardInactive>
-      <CardInactive label='free' toggleModalSave={toggleModalSave}></CardInactive>
-      <CardInactive label='free' toggleModalSave={toggleModalSave}></CardInactive>
-      <CardInactive label='free' toggleModalSave={toggleModalSave}></CardInactive>
-      
+      <CardInactive label='New' toggleModalSave={toggleModalSave}></CardInactive>
+      <CardInactive label='New' toggleModalSave={toggleModalSave}></CardInactive>
+      <CardInactive label='New' toggleModalSave={toggleModalSave}></CardInactive>
+      <CardInactive label='New' toggleModalSave={toggleModalSave}></CardInactive>
+      <CardInactive label='New' toggleModalSave={toggleModalSave}></CardInactive>
+      <CardInactive label='New' toggleModalSave={toggleModalSave}></CardInactive>
+      <CardInactive label='New' toggleModalSave={toggleModalSave}></CardInactive>
+      <CardInactive label='New' toggleModalSave={toggleModalSave}></CardInactive>
 
 
     </View>
 
 
 
-
-    <Modal
-        animationType="fade"
-        transparent={true}
-        visible={modalVisible}
-        onRequestClose={toggleModal}
-      >
-    <TouchableWithoutFeedback onPress={toggleModal}>
-        <View style={styles.modalOverlay}>
-          <TouchableWithoutFeedback onPress={(e) => e.stopPropagation()}>
-          <View style={{backgroundColor:'white', }}>
-            <View style={{ marginTop:10, marginRight:10, display: 'flex', alignItems: 'center', flexDirection:'row', justifyContent:'flex-end'}}>
-          <TouchableOpacity style={{display:'flex', alignItems:'center', width:40}} onPress={toggleModal}><Ionicons name="pencil" size={30} color="#000000" /></TouchableOpacity>
-          <TouchableOpacity style={{display:'flex', alignItems:'center', width:40}} onPress={toggleModal}><Ionicons name="close" size={40} color="#000000" /></TouchableOpacity>
-            </View>
-            
-          <ViewInfo workTime={workTime}
-        restTime={restTime}
-        rounds={rounds}
-        sets={sets}
-        restSet={restSet} 
-        fontSize={50}
-        textColor="#000000"
-        formatTime={formatTime}
-        formatTime2={formatTime2}
-        />
-          </View>
-        </TouchableWithoutFeedback>
-        </View>
-      </TouchableWithoutFeedback>
-      </Modal>
 
       <Modal
         animationType="fade"
@@ -346,7 +385,8 @@ const TabataTimer: React.FC  = () => {
           <TouchableOpacity style={{display:'flex', alignItems:'center', width:40}} onPress={toggleModalSave}><Ionicons name="close" size={40} color="#000000" /></TouchableOpacity>
             </View>
             
-          <SaveInfo workTime={workTime}
+          <SaveInfo prepare={prepare} 
+                  workTime={workTime}
                   restTime={restTime}
                   rounds={rounds}
                   sets={sets}
@@ -356,11 +396,13 @@ const TabataTimer: React.FC  = () => {
                   formatTime={formatTime}
                   formatTime2={formatTime2}
                   handleRelease={handleRelease}
+                  onPressPrepare={(isIncrement: boolean) => handlePress('prepare', isIncrement)}
                   onPressWorkTime={(isIncrement: boolean) => handlePress('work', isIncrement)}  
                   onPressRest={(isIncrement: boolean) => handlePress('rest', isIncrement)}
                   onPressRounds={(isIncrement: boolean) => handlePress('rounds', isIncrement)}
                   onPressSet={(isIncrement: boolean) => handlePress('sets', isIncrement)}
                   onPressRestSet={(isIncrement: boolean) => handlePress('restSet', isIncrement)}
+                  onSaveComplete={handleSaveComplete}
 
                   
         />
@@ -394,8 +436,8 @@ const styles = StyleSheet.create({
   
   
   editContainer: {
-    marginTop: 10,
-    marginBottom: 20,
+    marginTop: 0,
+    marginBottom: 10,
     flex: 1,
     flexDirection: 'row',
     display: 'flex',

@@ -1,17 +1,26 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, TouchableWithoutFeedback } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, TouchableWithoutFeedback, Modal } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
+import ViewInfo from './ViewInfo';
 
-interface TimeControlProps {
+interface SaveContainerProps {
   label: string;
+  prepare: number;
+  workTime: number; // Tiempo de trabajo en segundos
+  restTime: number; // Tiempo de descanso en segundos
+  rounds: number; // Número de rondas
+  sets: number; // Número de sets
+  restSet: number;
   triggerSignal: boolean;
   onSignalHandled: () => void;
   toggleModal: () => void;
+  formatTime: (time: number) => string; 
+  formatTime2: (time: number) => string; 
+  onDelete: () => void;
 }
 
-const TimeControl: React.FC<TimeControlProps> = ({ label,  triggerSignal, onSignalHandled, toggleModal }) => {
+const SaveContainer: React.FC<SaveContainerProps> = ({ label, prepare, workTime, restTime, rounds, sets, restSet,  triggerSignal, onSignalHandled, toggleModal, formatTime2, formatTime, onDelete }) => {
 
-    
   useEffect(() => {
     if (triggerSignal) {
       // Acción que se ejecuta cuando se recibe la señal
@@ -23,9 +32,13 @@ const TimeControl: React.FC<TimeControlProps> = ({ label,  triggerSignal, onSign
   }, [triggerSignal]);
   const [menuVisible,  setMenuVisible] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false); 
+  const [modalVisible, setModalVisible] = useState(false);
 
   const toggleMenu = () => {
     setMenuVisible(!menuVisible);
+  };
+  const toggleModalInfo = () => {
+    setModalVisible(!modalVisible);
   };
 
   const closeMenu = () => {
@@ -38,14 +51,11 @@ const TimeControl: React.FC<TimeControlProps> = ({ label,  triggerSignal, onSign
   };
 
   const confirmDelete = () => {
-    console.log('Elemento eliminado');
-    closeMenu(); // Cerrar el menú después de confirmar
+    onDelete(); // Invocar la función de eliminar del padre
+    closeMenu(); // Cerrar el menú
   };
   
-  const rejectDelete = () => {
-    console.log('Eliminación cancelada');
-    closeMenu(); // Cerrar el menú después de rechazar
-  };
+  const rejectDelete = () => closeMenu();
   
   return (
     <View style={styles.timeBox}>
@@ -63,16 +73,50 @@ const TimeControl: React.FC<TimeControlProps> = ({ label,  triggerSignal, onSign
       <Text style={styles.label}>{label}</Text>
 
       <View style={styles.buttonRow}>
-        <TouchableOpacity onPress={toggleModal} style={[styles.button, { backgroundColor: '#003161' }]}>
+        <TouchableOpacity onPress={toggleModalInfo} style={[styles.button, { backgroundColor: '#003161' }]}>
           <Text style={styles.buttonText}>View</Text>
         </TouchableOpacity>
       </View>
 
       <View style={styles.buttonRow}>
-        <TouchableOpacity style={styles.button}>
+        <TouchableOpacity style={styles.button} onPress={toggleModal}>
           <Text style={styles.buttonText}>Start</Text>
         </TouchableOpacity>
       </View>
+
+      <Modal
+        animationType="fade"
+        transparent={true}
+        visible={modalVisible}
+        onRequestClose={toggleModal}
+      >
+    <TouchableWithoutFeedback onPress={toggleModal}>
+        <View style={styles.modalOverlay}>
+          <TouchableWithoutFeedback onPress={(e) => e.stopPropagation()}>
+          <View style={{backgroundColor:'white', }}>
+            <View style={{ marginTop:10, marginRight:10, display: 'flex', alignItems: 'center', flexDirection:'row', justifyContent:'flex-end'}}>
+          <TouchableOpacity style={{display:'flex', alignItems:'center', width:40}} onPress={toggleModal}><Ionicons name="pencil" size={30} color="#000000" /></TouchableOpacity>
+          <TouchableOpacity style={{display:'flex', alignItems:'center', width:40}} onPress={toggleModalInfo}><Ionicons name="close" size={40} color="#000000" /></TouchableOpacity>
+            </View>
+            
+          <ViewInfo 
+        label={label}  
+        prepare={prepare}
+        workTime={workTime}
+        restTime={restTime}
+        rounds={rounds}
+        sets={sets}
+        restSet={restSet} 
+        fontSize={50}
+        textColor="#000000"
+        formatTime={formatTime}
+        formatTime2={formatTime2}
+        />
+          </View>
+        </TouchableWithoutFeedback>
+        </View>
+      </TouchableWithoutFeedback>
+      </Modal>
 
       {menuVisible && (
         <TouchableWithoutFeedback onPress={closeMenu}>
@@ -252,6 +296,13 @@ const styles = StyleSheet.create({
     color: 'white',
     fontWeight: 'bold',
   },
+  modalOverlay: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+    
+  },
 });
 
-export default TimeControl;
+export default SaveContainer;

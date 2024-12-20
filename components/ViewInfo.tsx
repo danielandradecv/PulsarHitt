@@ -6,6 +6,8 @@ import Resumen from './Resumen';
 import TotalTime from './Total';
 
 interface ViewInfoProps {
+  label: string;
+  prepare: number;
   workTime: number; // Tiempo de trabajo en segundos
   restTime: number; // Tiempo de descanso en segundos
   rounds: number; // Número de rondas
@@ -17,14 +19,25 @@ interface ViewInfoProps {
   fontSize?: number;
 }
 
-const ViewInfoProps: React.FC<ViewInfoProps> = ({ workTime, restTime, rounds, sets, restSet, formatTime, formatTime2  }) => {
+const ViewInfoProps: React.FC<ViewInfoProps> = ({prepare, workTime, restTime, rounds, sets, restSet, formatTime, formatTime2, label  }) => {
 
   
 
   return (
     <View style={styles.modalContent}>
-        <Text style={{fontFamily:'type2',fontSize:40}}>Tabata timer</Text>
+        <Text style={{fontFamily:'type2',fontSize:40}}>{label}</Text>
+        <Resumen 
+prepare={prepare}
+workTime={workTime}
+restTime={restTime}
+rounds={rounds}
+sets={sets}
+restSet={restSet} 
+formatTime={formatTime}
+textColor="#000000"
+fontSize={20}/>     
         <TotalTime
+        prepare={prepare}
         workTime={workTime}
         restTime={restTime}
         rounds={rounds}
@@ -32,7 +45,16 @@ const ViewInfoProps: React.FC<ViewInfoProps> = ({ workTime, restTime, rounds, se
         restSet={restSet} 
         fontSize={40}
         fontSizeNumber={65}
-        textColor="#000000"/>            
+        textColor="#000000"/>  
+
+<View style={{flexDirection:'row', display:'flex'}}>
+<ViewControls
+        label="prepare"
+        time={prepare}
+        formatTime={formatTime}
+      />
+
+</View>     
       
 
 <View style={{flexDirection:'row', display:'flex'}}>
@@ -71,14 +93,7 @@ const ViewInfoProps: React.FC<ViewInfoProps> = ({ workTime, restTime, rounds, se
 
 </View>
 
-<Resumen workTime={workTime}
-restTime={restTime}
-rounds={rounds}
-sets={sets}
-restSet={restSet} 
-formatTime={formatTime}
-textColor="#000000"
-fontSize={20}/>
+
     <TouchableOpacity
          
             

@@ -1,21 +1,23 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, TextInput } from 'react-native';
-import Resumen from './Resumen';
+import { View, Text, TouchableOpacity, StyleSheet, TextInput, Alert } from 'react-native';
 import TotalTime from './Total';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import TimeControl from './TimeControl';
 
 interface SaveInfoProps {
+  prepare: number;
   workTime: number;
   restTime: number;
   rounds: number;
   sets: number;
   restSet: number;
+  onSaveComplete: () => void;
   formatTime: (time: number) => string;
   formatTime2: (time: number) => string;
-
   textColor?: string;
   fontSize?: number;
   handleRelease: () => void;
+  onPressPrepare: (isIncrement: boolean) => void;
   onPressRest: (isIncrement: boolean) => void;
   onPressWorkTime: (isIncrement: boolean) => void;
   onPressRounds: (isIncrement: boolean) => void;
@@ -24,6 +26,7 @@ interface SaveInfoProps {
 }
 
 const SaveInfo: React.FC<SaveInfoProps> = ({
+  prepare,
   workTime,
   restTime,
   rounds,
@@ -32,16 +35,61 @@ const SaveInfo: React.FC<SaveInfoProps> = ({
   formatTime,
   formatTime2,
   handleRelease,
+  onPressPrepare,
   onPressWorkTime,
   onPressRest,
   onPressRounds,
   onPressSet,
   onPressRestSet,
+  onSaveComplete,
 }) => {
   const [text, setText] = useState('');
 
-  const handleChange = (input: React.SetStateAction<string>) => {
-    setText(input);
+  const handleSave = async () => {
+    if (!text) {
+      alert('Please enter a title');
+      return;
+    }
+
+    try {
+      // Obtener entrenamientos previos
+      const storedWorkouts = await AsyncStorage.getItem('workouts');
+      const workouts = storedWorkouts ? JSON.parse(storedWorkouts) : [];
+
+      // Verificar si se alcanzó el límite de 19 entrenamientos
+      if (workouts.length >= 19) {
+        Alert.alert(
+          'Entrenamientos llenos',
+          'Solo puedes guardar un máximo de 19 entrenamientos. Borra uno para agregar otro.',
+          [{ text: 'OK' }]
+        );
+        return;
+      }
+
+      // Crear un nuevo entrenamiento
+      const newWorkout = {
+        title: text,
+        prepare,
+        workTime,
+        restTime,
+        rounds,
+        sets,
+        restSet,
+      };
+
+      // Agregar el nuevo entrenamiento a la lista
+      workouts.push(newWorkout);
+
+      // Guardar en AsyncStorage
+      await AsyncStorage.setItem('workouts', JSON.stringify(workouts));
+
+      // Notificar al componente principal
+      onSaveComplete();
+
+      alert('Workout saved!');
+    } catch (error) {
+      console.error('Failed to save workout:', error);
+    }
   };
 
   return (
@@ -53,13 +101,14 @@ const SaveInfo: React.FC<SaveInfoProps> = ({
         <TextInput
           style={styles.input}
           placeholder="Enter your title here"
-          placeholderTextColor="#000"  // Placeholder en negro
+          placeholderTextColor="#000" // Placeholder en negro
           value={text}
-          onChangeText={handleChange}
+          onChangeText={setText}
         />
       </View>
 
       <TotalTime
+        prepare={prepare}
         workTime={workTime}
         restTime={restTime}
         rounds={rounds}
@@ -70,16 +119,15 @@ const SaveInfo: React.FC<SaveInfoProps> = ({
         textColor="#ffffff"
       />
 
-      <Resumen
-        workTime={workTime}
-        restTime={restTime}
-        rounds={rounds}
-        sets={sets}
-        restSet={restSet}
-        formatTime={formatTime}
-        textColor="#ffffff"
-        fontSize={20}
-      />
+      <View style={{ flexDirection: 'row', display: 'flex' }}>
+        <TimeControl
+          label="Prepare"
+          time={prepare}
+          onPress={onPressPrepare}
+          onRelease={handleRelease}
+          formatTime={formatTime}
+        />
+      </View>
 
       <View style={{ flexDirection: 'row', display: 'flex' }}>
         <TimeControl
@@ -123,6 +171,7 @@ const SaveInfo: React.FC<SaveInfoProps> = ({
       </View>
 
       <TouchableOpacity
+        onPress={handleSave}
         style={{
           display: 'flex',
           alignItems: 'center',
@@ -162,7 +211,7 @@ const styles = StyleSheet.create({
   },
   input: {
     width: 280,
-    textAlign:'center',
+    textAlign: 'center',
     height: 40,
     borderColor: 'gray',
     borderWidth: 1,
