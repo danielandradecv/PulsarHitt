@@ -1,7 +1,8 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, TouchableWithoutFeedback, Modal } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import ViewInfo from './ViewInfo';
+import SaveInfo from './SaveInfo';
 
 interface SaveContainerProps {
   label: string;
@@ -17,9 +18,13 @@ interface SaveContainerProps {
   formatTime: (time: number) => string; 
   formatTime2: (time: number) => string; 
   onDelete: () => void;
+  fetchWorkouts: () => void;
+  
+  
+
 }
 
-const SaveContainer: React.FC<SaveContainerProps> = ({ label, prepare, workTime, restTime, rounds, sets, restSet,  triggerSignal, onSignalHandled, toggleModal, formatTime2, formatTime, onDelete }) => {
+const SaveContainer: React.FC<SaveContainerProps> = ({ label, prepare: initialPrepare, workTime: initialWorktime, restTime: initialTime, rounds: initialRounds, sets: initialSets, restSet: initialRestSet,  triggerSignal, onSignalHandled, toggleModal, formatTime2, formatTime, onDelete,  fetchWorkouts }) => {
 
   useEffect(() => {
     if (triggerSignal) {
@@ -30,6 +35,14 @@ const SaveContainer: React.FC<SaveContainerProps> = ({ label, prepare, workTime,
       onSignalHandled();
     }
   }, [triggerSignal]);
+  const [prepare, setPrepare] = useState(initialPrepare);
+  const [workTime, setWorkTime] = useState(initialWorktime);
+  const [restTime, setRestTime] = useState(initialTime);
+  const [rounds, setRounds] = useState(initialRounds);
+  const [sets, setSets] = useState(initialSets);
+  const [restSet, setRestSet] = useState(initialRestSet);
+
+
   const [menuVisible,  setMenuVisible] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false); 
   const [modalVisible, setModalVisible] = useState(false);
@@ -56,7 +69,70 @@ const SaveContainer: React.FC<SaveContainerProps> = ({ label, prepare, workTime,
   };
   
   const rejectDelete = () => closeMenu();
+
+
+  const [modalVisibleEdit, setModalVisibleEdit] = useState(false);
+  const toggleModalEdit = () => {
+    setModalVisibleEdit(!modalVisibleEdit);
+  };
+
+  const toggleModalEdit2 = () => {
+    setModalVisible(!modalVisible);
+    setModalVisibleEdit(!modalVisibleEdit);
+    setMenuVisible(false);
+  };
+
   
+
+
+const intervalRef = useRef<NodeJS.Timeout | null>(null);
+
+
+ 
+  const handlePress = (type: string, isIncrement: boolean) => {
+    const increment = isIncrement ? 1 : -1;
+    
+    // Función que incrementa o decrementa el valor según el tipo
+    const updateValue = () => {
+      if (type === 'prepare') {
+        if (prepare > 0 || increment > 0) setPrepare(prev => Math.max(prev + increment, 0)); // Evitar valores negativos
+      }
+      if (type === 'work') {
+        if (workTime > 0 || increment > 0) setWorkTime(prev => Math.max(prev + increment, 0)); // Evitar valores negativos
+      }
+      if (type === 'rest') {
+        if (restTime > 0 || increment > 0) setRestTime(prev => Math.max(prev + increment, 0)); // Evitar valores negativos
+      }
+      if (type === 'rounds' && (rounds > 0 || increment > 0)) setRounds(prev => Math.max(prev + increment, 1)); // Evitar valores negativos
+      if (type === 'sets' && (sets > 0 || increment > 0)) setSets(prev => Math.max(prev + increment, 1)); // Evitar valores negativos
+      if (type === 'restSet') {
+        if (restSet > 0 || increment > 0) setRestSet(prev => Math.max(prev + increment, 0)); // Evitar valores negativos
+      }
+    };
+
+    intervalRef.current = setInterval(updateValue, 70);
+
+
+    // Incrementar una vez al presionar el botón
+    updateValue();
+  };
+  
+  // Función que detiene el incremento rápido
+  const handleRelease = () => {
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current); // Detener el intervalo cuando se suelta el botón
+      intervalRef.current = null;
+    }
+  };
+
+
+
+  const handleSaveComplete = () => {
+    fetchWorkouts(); // Recargar los entrenamientos después de guardar uno nuevo
+    setModalVisibleEdit(false);
+
+  };
+
   return (
     <View style={styles.timeBox}>
       <View style={{ alignItems: 'flex-end', justifyContent: 'flex-end', width: '100%' }}>
@@ -90,14 +166,22 @@ const SaveContainer: React.FC<SaveContainerProps> = ({ label, prepare, workTime,
         visible={modalVisible}
         onRequestClose={toggleModal}
       >
-    <TouchableWithoutFeedback onPress={toggleModal}>
+    <TouchableWithoutFeedback onPress={toggleModalInfo}>
         <View style={styles.modalOverlay}>
           <TouchableWithoutFeedback onPress={(e) => e.stopPropagation()}>
           <View style={{backgroundColor:'white', }}>
             <View style={{ marginTop:10, marginRight:10, display: 'flex', alignItems: 'center', flexDirection:'row', justifyContent:'flex-end'}}>
-          <TouchableOpacity style={{display:'flex', alignItems:'center', width:40}} onPress={toggleModal}><Ionicons name="pencil" size={30} color="#000000" /></TouchableOpacity>
-          <TouchableOpacity style={{display:'flex', alignItems:'center', width:40}} onPress={toggleModalInfo}><Ionicons name="close" size={40} color="#000000" /></TouchableOpacity>
+          <TouchableOpacity  onPress={toggleModalEdit2} style={{display:'flex', alignItems:'center', width:40}}>
+            <Ionicons name="pencil" size={30} color="#000000" /></TouchableOpacity>
+
+
+          <TouchableOpacity style={{display:'flex', alignItems:'center', width:40}} onPress={toggleModalInfo}>
+            <Ionicons name="close" size={40} color="#000000" /></TouchableOpacity>
+
+            
             </View>
+
+            
             
           <ViewInfo 
         label={label}  
@@ -118,6 +202,51 @@ const SaveContainer: React.FC<SaveContainerProps> = ({ label, prepare, workTime,
       </TouchableWithoutFeedback>
       </Modal>
 
+      <Modal
+        animationType="fade"
+        transparent={true}
+        visible={modalVisibleEdit}
+        onRequestClose={toggleModalEdit}
+      >
+    <TouchableWithoutFeedback onPress={toggleModalEdit}>
+        <View style={styles.modalOverlay}>
+          <TouchableWithoutFeedback onPress={(e) => e.stopPropagation()}>
+          <View style={{backgroundColor:'#73008a', }}>
+            <View style={{ marginTop:10, marginRight:10, display: 'flex', alignItems: 'center', flexDirection:'row', justifyContent:'flex-end'}}>
+          <TouchableOpacity style={{display:'flex', alignItems:'center', width:40}} onPress={toggleModalEdit}><Ionicons name="close" size={40} color="#000000" /></TouchableOpacity>
+            </View>
+            
+          <SaveInfo
+                  action="edit"
+                  title={label} 
+                  label="Edit your training"    
+                  prepare={prepare} 
+                  workTime={workTime}
+                  restTime={restTime}
+                  rounds={rounds}
+                  sets={sets}
+                  restSet={restSet}
+                  fontSize={20}
+                  textColor="#ffffff"
+                  formatTime={formatTime}
+                  formatTime2={formatTime2}
+                  handleRelease={handleRelease}
+                  onPressPrepare={(isIncrement: boolean) => handlePress('prepare', isIncrement)}
+                  onPressWorkTime={(isIncrement: boolean) => handlePress('work', isIncrement)}  
+                  onPressRest={(isIncrement: boolean) => handlePress('rest', isIncrement)}
+                  onPressRounds={(isIncrement: boolean) => handlePress('rounds', isIncrement)}
+                  onPressSet={(isIncrement: boolean) => handlePress('sets', isIncrement)}
+                  onPressRestSet={(isIncrement: boolean) => handlePress('restSet', isIncrement)}
+                  onSaveComplete={handleSaveComplete}
+
+                  
+        />
+          </View>
+        </TouchableWithoutFeedback>
+        </View>
+      </TouchableWithoutFeedback>
+      </Modal>
+
       {menuVisible && (
         <TouchableWithoutFeedback onPress={closeMenu}>
           <View style={styles.overlay}>
@@ -129,10 +258,10 @@ const SaveContainer: React.FC<SaveContainerProps> = ({ label, prepare, workTime,
                   {/* Botón Cerrar */}
                   <TouchableOpacity onPress={closeMenu} style={styles.closeButton}>
                     <Ionicons name="close" size={20} color="#ffffff" />
-                    <Text style={{ color: 'white' }}>Cancel</Text>
+                    <Text style={{ color: '#ffffff' }}>Cancel</Text>
                   </TouchableOpacity>
 
-                  <TouchableOpacity style={styles.menuItem} onPress={() => console.log('Editar')}>
+                  <TouchableOpacity style={styles.menuItem} onPress={toggleModalEdit}>
                     <Ionicons name="create-outline" size={20} color="black" />
                     <Text style={styles.menuText}>Editar</Text>
                   </TouchableOpacity>
@@ -158,6 +287,7 @@ const SaveContainer: React.FC<SaveContainerProps> = ({ label, prepare, workTime,
             )}
             </View>
           </View>
+          
         </TouchableWithoutFeedback>
       )}
     </View>
@@ -236,10 +366,11 @@ const styles = StyleSheet.create({
   closeButton: {
     padding: 5,
     width: '100%',
-    backgroundColor: '#f35f5f',
+    backgroundColor: '#ff1f1f',
     justifyContent: 'center',
     alignItems: 'center',
     flexDirection: 'row',
+    color: '#000000',
   },
   menuItem: {
     flexDirection: 'row',

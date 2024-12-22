@@ -148,6 +148,7 @@ const [workouts, setWorkouts] = useState<Workout[]>([]);
   const handleSaveComplete = () => {
     fetchWorkouts(); // Recargar los entrenamientos después de guardar uno nuevo
     setModalVisibleSave(false);
+
   };
 
   const handleDelete = async (index: number): Promise<void> => {
@@ -171,6 +172,14 @@ const [workouts, setWorkouts] = useState<Workout[]>([]);
 
 
 
+
+  // aqui va el editar el entrenamiento
+
+
+
+
+
+const MAX_SLOTS = 18;
 
 
 
@@ -338,32 +347,28 @@ const [workouts, setWorkouts] = useState<Workout[]>([]);
         
       {workouts.map((workout, index) => (
           <SaveContainer
-            key={index}
-            label={workout.title} // Título del entrenamiento
-            prepare={workout.prepare} 
-            restTime={workout.restTime}
-            workTime={workout.workTime}
-            rounds={workout.rounds}
-            sets={workout.sets}
-            restSet={workout.restSet}
-            toggleModal={() => console.log('Ver entrenamiento:', workout)} 
-            onSignalHandled={() => setTriggerSignal(false) } 
-            triggerSignal={triggerSignal}
-            formatTime={formatTime}
-            formatTime2={formatTime2}
-            onDelete={() => handleDelete(index)}
+          key={index}
+          label={workout.title} // Título del entrenamiento
+          prepare={workout.prepare} 
+          workTime={workout.workTime}
+          restTime={workout.restTime}
+          rounds={workout.rounds}
+          sets={workout.sets}
+          restSet={workout.restSet}
+          triggerSignal={triggerSignal}
+          onSignalHandled={() => setTriggerSignal(false) } 
+          toggleModal={() => console.log('Ver entrenamiento:', workout)} 
+          formatTime={formatTime}
+          formatTime2={formatTime2}
+          onDelete={() => handleDelete(index)}
+          fetchWorkouts={fetchWorkouts}
           />
         ))} 
       
-
-      <CardInactive label='New' toggleModalSave={toggleModalSave}></CardInactive>
-      <CardInactive label='New' toggleModalSave={toggleModalSave}></CardInactive>
-      <CardInactive label='New' toggleModalSave={toggleModalSave}></CardInactive>
-      <CardInactive label='New' toggleModalSave={toggleModalSave}></CardInactive>
-      <CardInactive label='New' toggleModalSave={toggleModalSave}></CardInactive>
-      <CardInactive label='New' toggleModalSave={toggleModalSave}></CardInactive>
-      <CardInactive label='New' toggleModalSave={toggleModalSave}></CardInactive>
-      <CardInactive label='New' toggleModalSave={toggleModalSave}></CardInactive>
+{/* Rellenamos los espacios restantes con CardInactive */}
+{Array.from({ length: MAX_SLOTS - workouts.length }).map((_, index) => (
+    <CardInactive key={`inactive-${index}`} label="New" toggleModalSave={toggleModalSave} />
+  ))}
 
 
     </View>
@@ -385,7 +390,11 @@ const [workouts, setWorkouts] = useState<Workout[]>([]);
           <TouchableOpacity style={{display:'flex', alignItems:'center', width:40}} onPress={toggleModalSave}><Ionicons name="close" size={40} color="#000000" /></TouchableOpacity>
             </View>
             
-          <SaveInfo prepare={prepare} 
+          <SaveInfo 
+                  action="save"
+                  title=''
+                  label={"Enter your title here"} 
+                  prepare={prepare} 
                   workTime={workTime}
                   restTime={restTime}
                   rounds={rounds}
@@ -430,8 +439,9 @@ const styles = StyleSheet.create({
     zIndex:100,
   },
   container: {
-    flex: 1,
     backgroundColor: '#000000',
+    flex: 1,
+    
   },
   
   
