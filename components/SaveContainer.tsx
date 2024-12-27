@@ -3,6 +3,7 @@ import { View, Text, TouchableOpacity, StyleSheet, TouchableWithoutFeedback, Mod
 import Ionicons from '@expo/vector-icons/Ionicons';
 import ViewInfo from './ViewInfo';
 import SaveInfo from './SaveInfo';
+import StartContainer from './StartContiner';
 
 interface SaveContainerProps {
   label: string;
@@ -46,6 +47,11 @@ const SaveContainer: React.FC<SaveContainerProps> = ({ label, prepare: initialPr
   const [menuVisible,  setMenuVisible] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false); 
   const [modalVisible, setModalVisible] = useState(false);
+  const [modalVisibleStart, setModalVisibleStart] = useState(false);
+  
+    const toggleModalStart = () => {
+      setModalVisibleStart(!modalVisibleStart);
+    };
 
   const toggleMenu = () => {
     setMenuVisible(!menuVisible);
@@ -155,10 +161,42 @@ const intervalRef = useRef<NodeJS.Timeout | null>(null);
       </View>
 
       <View style={styles.buttonRow}>
-        <TouchableOpacity style={styles.button} onPress={toggleModal}>
+        <TouchableOpacity style={styles.button} onPress={toggleModalStart}>
           <Text style={styles.buttonText}>Start</Text>
         </TouchableOpacity>
+        <TouchableOpacity style={styles.button} onPress={toggleModal}>
+          <Text style={styles.buttonText}>consol</Text>
+        </TouchableOpacity>
       </View>
+
+      <Modal
+        animationType="fade"
+        transparent={true}
+        visible={modalVisibleStart}
+        onRequestClose={toggleModalStart}
+      >
+    <TouchableWithoutFeedback onPress={toggleModalStart}>
+        <View style={styles.modalOverlay}>
+          <TouchableWithoutFeedback onPress={(e) => e.stopPropagation()}>
+          <View style={{backgroundColor:'#ffffff', height: '100%', width: '100%',}} >
+            <View style={{width: '100%',  marginTop:48, marginRight:10, display: 'flex', alignItems: 'center', flexDirection:'row', justifyContent:'flex-end'}}>
+          <TouchableOpacity style={{ display:'flex', alignItems:'center', width:40}} onPress={toggleModalStart}><Ionicons name="close" size={40} color="#000000" />
+          </TouchableOpacity>
+            </View>
+            
+            <StartContainer 
+          title="Tabata timer" 
+          prepare={prepare} 
+          workTime={workTime}
+          restTime={restTime}
+          rounds={rounds}
+          sets={sets}
+          restSet={restSet}></StartContainer>
+          </View>
+        </TouchableWithoutFeedback>
+        </View>
+      </TouchableWithoutFeedback>
+      </Modal>
 
       <Modal
         animationType="fade"
@@ -319,7 +357,7 @@ const styles = StyleSheet.create({
     
   },
   buttonRow: {
-    flexDirection: 'row',
+    flexDirection: 'column',
   },
   button: {
     backgroundColor: '#018d5e',

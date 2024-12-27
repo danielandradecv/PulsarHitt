@@ -9,6 +9,7 @@ import SaveContainer from '@/components/SaveContainer';
 import Resumen from '@/components/Resumen';
 import SaveInfo from '@/components/SaveInfo';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import StartContainer from '@/components/StartContiner';
 
 
 
@@ -107,8 +108,11 @@ const TabataTimer: React.FC  = () => {
 
   const [triggerSignal, setTriggerSignal] = useState(false);
   const [modalVisibleSave, setModalVisibleSave] = useState(false);
+  const [modalVisibleStart, setModalVisibleStart] = useState(false);
 
-
+  const toggleModalStart = () => {
+    setModalVisibleStart(!modalVisibleStart);
+  };
 
 
   const toggleModalSave = () => {
@@ -320,7 +324,7 @@ const MAX_SLOTS = 18;
       
       <TouchableOpacity
       
-        
+        onPress={toggleModalStart}
         style={{
           display: 'flex',
           alignItems: 'center',
@@ -372,7 +376,34 @@ const MAX_SLOTS = 18;
 
 
     </View>
-
+    <Modal
+        animationType="fade"
+        transparent={true}
+        visible={modalVisibleStart}
+        onRequestClose={toggleModalStart}
+      >
+    <TouchableWithoutFeedback onPress={toggleModalStart}>
+        <View style={styles.modalOverlay}>
+          <TouchableWithoutFeedback onPress={(e) => e.stopPropagation()}>
+          <View style={{backgroundColor:'#000000', height: '100%', width: '100%',}} >
+            <View style={{width: '100%',  marginTop:60, marginRight:10, display: 'flex', alignItems: 'center', flexDirection:'row', justifyContent:'flex-end'}}>
+          <TouchableOpacity style={{ display:'flex', alignItems:'center', width:60}} onPress={toggleModalStart}><Ionicons name="close" size={50} color="#ffffff" />
+          </TouchableOpacity>
+            </View>
+            
+          <StartContainer 
+          title="Tabata timer" 
+          prepare={prepare} 
+          workTime={workTime}
+          restTime={restTime}
+          rounds={rounds}
+          sets={sets}
+          restSet={restSet}></StartContainer>
+          </View>
+        </TouchableWithoutFeedback>
+        </View>
+      </TouchableWithoutFeedback>
+      </Modal>
 
 
 
