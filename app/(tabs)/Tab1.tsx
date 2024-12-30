@@ -10,7 +10,7 @@ import Resumen from '@/components/Resumen';
 import SaveInfo from '@/components/SaveInfo';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import StartContainer from '@/components/StartContiner';
-
+import LottieView from 'lottie-react-native';
 
 
 const TabataTimer: React.FC  = () => {
@@ -109,6 +109,7 @@ const TabataTimer: React.FC  = () => {
   const [triggerSignal, setTriggerSignal] = useState(false);
   const [modalVisibleSave, setModalVisibleSave] = useState(false);
   const [modalVisibleStart, setModalVisibleStart] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
   const toggleModalStart = () => {
     setModalVisibleStart(!modalVisibleStart);
@@ -123,6 +124,18 @@ const TabataTimer: React.FC  = () => {
   const handleButtonPress = () => {
     setTriggerSignal(true);
   };
+
+
+  useEffect(() => {
+    if (modalVisibleStart) {
+      // Simular tiempo de carga
+      const timer = setTimeout(() => setIsLoading(false), 880);
+      return () => clearTimeout(timer);
+    } else {
+      setIsLoading(true);
+    }
+  }, [modalVisibleStart]);
+
 
 
 // logica del save
@@ -209,9 +222,6 @@ const MAX_SLOTS = 18;
   
     loadFonts();
   }, []);
-  if (!fontsLoaded) {
-    return <Text>Cargando fuente...</Text>;
-  }
 
 
   return (
@@ -377,33 +387,50 @@ const MAX_SLOTS = 18;
 
     </View>
     <Modal
-        animationType="fade"
-        transparent={true}
-        visible={modalVisibleStart}
-        onRequestClose={toggleModalStart}
-      >
-    <TouchableWithoutFeedback onPress={toggleModalStart}>
-        <View style={styles.modalOverlay}>
-          <TouchableWithoutFeedback onPress={(e) => e.stopPropagation()}>
-          <View style={{backgroundColor:'#000000', height: '100%', width: '100%',}} >
-            <View style={{width: '100%',  marginTop:60, marginRight:10, display: 'flex', alignItems: 'center', flexDirection:'row', justifyContent:'flex-end'}}>
-          <TouchableOpacity style={{ display:'flex', alignItems:'center', width:60}} onPress={toggleModalStart}><Ionicons name="close" size={50} color="#ffffff" />
-          </TouchableOpacity>
-            </View>
-            
-          <StartContainer 
-          title="Tabata timer" 
-          prepare={prepare} 
-          workTime={workTime}
-          restTime={restTime}
-          rounds={rounds}
-          sets={sets}
-          restSet={restSet}></StartContainer>
+  animationType="fade"
+  transparent={true}
+  visible={modalVisibleStart}
+  onRequestClose={toggleModalStart}
+>
+  <TouchableWithoutFeedback onPress={toggleModalStart}>
+    <View style={styles.modalOverlay}>
+      <TouchableWithoutFeedback onPress={(e) => e.stopPropagation()}>
+        <View style={styles.modalContent}>
+          <View style={styles.closeButton}>
+            <TouchableOpacity onPress={toggleModalStart}>
+              <Ionicons name="close" size={50} color="#ffffff" />
+            </TouchableOpacity>
           </View>
-        </TouchableWithoutFeedback>
+
+          {isLoading ? (
+            <View style={styles.animationContainer}>
+              <LottieView
+                source={require('../../assets/images/run.json')} // Ruta de tu archivo JSON
+                autoPlay
+                loop
+                style={styles.lottie}
+              />
+            </View>
+          ) : (
+            <StartContainer
+              title="Tabata timer"
+              prepare={prepare}
+              workTime={workTime}
+              restTime={restTime}
+              rounds={rounds}
+              sets={sets}
+              restSet={restSet}
+            />
+          )}
         </View>
       </TouchableWithoutFeedback>
-      </Modal>
+    </View>
+  </TouchableWithoutFeedback>
+</Modal>
+
+    
+
+  
 
 
 
@@ -475,7 +502,29 @@ const styles = StyleSheet.create({
     
   },
   
-  
+  modalContent: {
+    flex: 1,
+    backgroundColor: '#8d8b8b',
+    width: '100%',
+    height: '100%',
+    justifyContent: 'center', // Centra verticalmente
+    alignItems: 'center', // Centra horizontalmente
+  },
+  closeButton: {
+    position: 'absolute',
+    top: 60,
+    right: 10,
+    zIndex: 1,
+  },
+  animationContainer: {
+    justifyContent: 'center',
+    alignItems: 'center',
+    flex: 1,
+  },
+  lottie: {
+    width: 150,
+    height: 150,
+  },
   editContainer: {
     marginTop: 0,
     marginBottom: 10,
