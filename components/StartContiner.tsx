@@ -1,9 +1,11 @@
 import React, { useEffect, useState, useRef, useMemo } from 'react';
-import { View, StyleSheet, Text, TouchableOpacity } from 'react-native';
+import { View, StyleSheet, Text, TouchableOpacity, Animated } from 'react-native';
 import CircularProgress from 'react-native-circular-progress-indicator';
 import Svg, { Path } from 'react-native-svg';
 import Total from './Total';
 import { Ionicons } from '@expo/vector-icons';
+import { interpolate } from 'react-native-reanimated';
+import LottieView from 'lottie-react-native';
 
 interface StartContainerProps {
   title: string;
@@ -27,26 +29,10 @@ const StartContainer: React.FC<StartContainerProps> = ({
   restSet,
 }) => {
   const [isPaused, setIsPaused] = useState(false);
-  const [phaseIndex, setPhaseIndex] = useState(0); // Índice de la fase actual
+  const [phaseIndex, setPhaseIndex] = useState(0);
   const [progress, setProgress] = useState(prepare);
-
-  const timerRef = useRef<number | null>(null);
-
-  // Construir la lista completa de fases
-  const phases = useMemo(() => {
-    const phaseList: Phase[] = [];
-    phaseList.push('prepare'); // Fase inicial
-    for (let set = 1; set <= sets; set++) {
-      for (let round = 1; round <= rounds; round++) {
-        phaseList.push('work', 'rest'); // Trabajo y descanso en cada ronda
-      }
-      if (set < sets) {
-        phaseList.push('restSet'); // Descanso entre sets (excepto el último set)
-      }
-    }
-    phaseList.push('done'); // Fase final
-    return phaseList;
-  }, [rounds, sets]);
+  const [remainingTime, setRemainingTime] = useState<number | null>(null);
+  const [isRunnerVisible, setIsRunnerVisible] = useState(true);
 
   const getPhaseDuration = (phase: Phase) => {
     switch (phase) {
@@ -59,24 +45,62 @@ const StartContainer: React.FC<StartContainerProps> = ({
       case 'restSet':
         return restSet;
       default:
-        return 0; // Done o casos no definidos
+        return 0;
     }
   };
 
+  const phases = useMemo(() => {
+    const phaseList: Phase[] = [];
+    phaseList.push('prepare');
+    for (let set = 1; set <= sets; set++) {
+      for (let round = 1; round <= rounds; round++) {
+        phaseList.push('work', 'rest');
+      }
+      if (set < sets) {
+        phaseList.push('restSet');
+      }
+    }
+    phaseList.push('done');
+    return phaseList;
+  }, [rounds, sets]);
+
+  const totalDuration = useMemo(() => {
+    return prepare + sets * (rounds * (workTime + restTime) + restSet) - restSet;
+  }, [prepare, workTime, restTime, rounds, sets, restSet]);
+
+  const totalElapsed = useMemo(() => {
+    return phases.slice(0, phaseIndex).reduce((sum, phase) => sum + getPhaseDuration(phase), 0) + (getPhaseDuration(phases[phaseIndex]) - progress);
+  }, [phaseIndex, progress, phases]);
+
+  const timerRef = useRef<number | null>(null);
+
   const updatePhase = (newIndex: number) => {
-    if (newIndex < 0 || newIndex >= phases.length) return; // Limitar dentro del rango
+    if (newIndex < 0 || newIndex >= phases.length) return;
     const newPhase = phases[newIndex];
     setPhaseIndex(newIndex);
     setProgress(getPhaseDuration(newPhase));
+    setRemainingTime(null);
   };
 
   const nextPhase = () => updatePhase(phaseIndex + 1);
   const prevPhase = () => updatePhase(phaseIndex - 1);
 
   useEffect(() => {
-    if (isPaused || phases[phaseIndex] === 'done') return;
+    if (totalElapsed >= totalDuration) {
+      setIsRunnerVisible(false); // Oculta la animación cuando el progreso es 100%
+    } else {
+      setIsRunnerVisible(true); // Muestra la animación cuando el progreso es menor al 100%
+    }
+  }, [totalElapsed, totalDuration]);
+  
 
-    const duration = getPhaseDuration(phases[phaseIndex]) * 1000;
+  useEffect(() => {
+    if (phases[phaseIndex] === 'done' || isPaused) return;
+
+    const duration = remainingTime !== null 
+      ? remainingTime * 1000 
+      : getPhaseDuration(phases[phaseIndex]) * 1000;
+
     const startTime = Date.now();
     const endTime = startTime + duration;
 
@@ -93,11 +117,20 @@ const StartContainer: React.FC<StartContainerProps> = ({
     };
 
     timerRef.current = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(timerRef.current || 0);
-  }, [phaseIndex, isPaused]);
 
-  const getCurrentSetAndRound = () => {
-    let phaseCounter = 1; // Contar fases dentro de cada set
+    return () => cancelAnimationFrame(timerRef.current || 0);
+  }, [phaseIndex, isPaused, remainingTime]);
+
+  const handlePauseResume = () => {
+    setIsPaused((prev) => {
+      if (!prev) {
+        setRemainingTime(progress);
+      }
+      return !prev;
+    });
+  };
+
+  const { currentSet, currentRound } = useMemo(() => {
     let currentSet = 1;
     let currentRound = 1;
 
@@ -112,9 +145,7 @@ const StartContainer: React.FC<StartContainerProps> = ({
     }
 
     return { currentSet, currentRound };
-  };
-
-  const { currentSet, currentRound } = getCurrentSetAndRound();
+  }, [phaseIndex, phases]);
 
   const pieData = useMemo(() => {
     return Array(rounds)
@@ -134,7 +165,7 @@ const StartContainer: React.FC<StartContainerProps> = ({
     const cx = 125;
     const cy = 125;
     const gap = 20;
-    const anglePerSegment = 360 / rounds - gap;
+    const anglePerSegment = 365 / rounds - gap;
 
     const polarToCartesian = (angle: number) => {
       const rad = (Math.PI / 180) * angle;
@@ -147,7 +178,7 @@ const StartContainer: React.FC<StartContainerProps> = ({
     return (
       <Svg height="250" width="250">
         {pieData.map((segment, index) => {
-          const startAngle = -90 + index * (360 / rounds);
+          const startAngle = -84 + index * (360 / rounds);
           const endAngle = startAngle + anglePerSegment;
 
           const start = polarToCartesian(startAngle);
@@ -169,15 +200,90 @@ const StartContainer: React.FC<StartContainerProps> = ({
     );
   }, [pieData]);
 
-  const getActiveStrokeColor = (phase: Phase) => {
-    const colors: Record<Phase, string> = {
-      prepare: '#00BFFF', // Azul para preparación
-      work: '#00FF00',    // Verde para trabajo
-      rest: '#FF0000',    // Rojo para descanso
-      restSet: '#00BFFF', // Azul para descanso entre sets, igual que prepare
-      done: '#CCCCCC',    // Gris para final
+  const getActiveStrokeColor = (phase: Phase, progress: number, maxValue: number) => {
+    // Definimos los colores y los umbrales para cada fase
+    const phaseColorStages: Record<Phase, { threshold: number; color: string }[]> = {
+      prepare: [
+        { threshold: 0.1, color: '#0cffae' }, // Celeste hasta 75%\
+        { threshold: 0.30, color: '#05caa9' }, // Celeste hasta 75%
+        { threshold: 1.0, color: '#00BFFF' }, // Azul después
+      ],
+      work: [
+        { threshold: 0.1, color: '#f7bd00' }, // Verde hasta 50%
+        { threshold: 0.20, color: '#9ff107' }, // Verde hasta 50%
+        { threshold: 0.40, color: '#88ff00' }, // Verde Lima hasta 75%
+        { threshold: 1.0, color: '#00ff00' }, // Verde Oscuro después
+      ],
+      rest: [
+        { threshold: 0.1, color: '#ffa600' }, // Naranja hasta 50%
+        { threshold: 0.20, color: '#f14907' }, // Naranja hasta 50%
+        { threshold: 0.40, color: '#f86300' }, // Rojo hasta 75%
+        { threshold: 1.0, color: '#ff0000' }, // Rojo Oscuro después
+      ],
+      restSet: [
+        { threshold: 0.1, color: '#0cffae' }, // Celeste hasta 75%\
+        { threshold: 0.30, color: '#05caa9' }, // Celeste hasta 75%
+        { threshold: 1.0, color: '#00BFFF' }, // Azul después
+      ],
+      done: [
+        { threshold: 1.0, color: '#CCCCCC' }, // Gris Completo
+      ],
     };
-    return colors[phase];
+  
+    const stages = phaseColorStages[phase];
+    const percentage = progress / maxValue;
+  
+    // Encontrar los dos colores más cercanos
+    for (let i = 0; i < stages.length - 1; i++) {
+      const start = stages[i];
+      const end = stages[i + 1];
+      if (percentage <= end.threshold) {
+        // Interpolar entre los colores
+        const factor = (percentage - start.threshold) / (end.threshold - start.threshold);
+        return interpolateColor(start.color, end.color, factor);
+      }
+    }
+  
+    // Si no se encuentra un tramo, devolvemos el último color
+    return stages[stages.length - 1].color;
+  };
+  
+  // Función para interpolar entre dos colores
+  const interpolateColor = (start: string, end: string, factor: number) => {
+    const hexToRgb = (hex: string) =>
+      hex
+        .replace(/^#/, '')
+        .match(/.{2}/g)!
+        .map((x) => parseInt(x, 16));
+  
+    const rgbToHex = (r: number, g: number, b: number) => {
+      return (
+        '#' +
+        [r, g, b]
+          .map((x) =>
+            Math.max(0, Math.min(255, x)) // Asegurarse de que el valor esté en el rango 0-255
+              .toString(16)
+              .padStart(2, '0') // Asegurar siempre 2 caracteres por canal
+          )
+          .join('')
+      );
+    };
+  
+    const startRgb = hexToRgb(start);
+    const endRgb = hexToRgb(end);
+  
+    const interpolatedRgb = startRgb.map((start, index) =>
+      Math.round(start + (endRgb[index] - start) * factor)
+    );
+  
+    return rgbToHex(interpolatedRgb[0], interpolatedRgb[1], interpolatedRgb[2]);
+  };
+  
+
+  const formatTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = Math.floor(seconds % 60);
+    return `${mins}:${secs.toString().padStart(2, '0')}`; // Asegura que los segundos tengan dos dígitos
   };
   
   
@@ -185,57 +291,87 @@ const StartContainer: React.FC<StartContainerProps> = ({
   return (
     <View style={styles.container}>
       <Text style={styles.title}>{title}</Text>
-      <Total
-        prepare={prepare}
-        workTime={workTime}
-        restTime={restTime}
-        rounds={rounds}
-        sets={sets}
-        restSet={restSet}
-        fontSize={30}
-        fontSizeNumber={45}
-        textColor="white"
-      />
+      
       <View style={styles.donutContainer}>
         {renderDonut}
         <View style={styles.circularProgressContainer}>
-        <CircularProgress
-  key={phases[phaseIndex]}
-  value={progress}
-  maxValue={getPhaseDuration(phases[phaseIndex])}
-  radius={80}
-  activeStrokeWidth={15}
-  inActiveStrokeWidth={10}
-  activeStrokeColor={getActiveStrokeColor(phases[phaseIndex])} // Color dinámico basado en la fase
-  inActiveStrokeColor="#2f525f"
-  circleBackgroundColor="transparent"
-  title={phases[phaseIndex].toUpperCase()}
-  subtitle={`Set ${currentSet} - Ronda ${currentRound}`}
-  titleColor="#fff"
-  subtitleColor="#fff"
-  progressValueColor="#fff"
-  duration={0}
-/>
-
-
+          <CircularProgress
+            key={phases[phaseIndex]}
+            value={progress}
+            maxValue={getPhaseDuration(phases[phaseIndex])}
+            radius={80}
+            activeStrokeWidth={15}
+            inActiveStrokeWidth={10}
+            activeStrokeColor={getActiveStrokeColor(
+              phases[phaseIndex],
+              progress,
+              getPhaseDuration(phases[phaseIndex])
+            )}
+            inActiveStrokeColor="#2f525f"
+            circleBackgroundColor="transparent"
+            title={phases[phaseIndex].toUpperCase()}
+            subtitle={`Ronda ${currentRound}`}
+            titleColor="#fff"
+            subtitleColor="#fff"
+            progressValueColor="#fff"
+            duration={0}
+          />
         </View>
       </View>
       <Text style={styles.sets}>{`Set ${currentSet}/${sets}`}</Text>
-      <View style={styles.controlButtons}>
-        <TouchableOpacity onPress={prevPhase}>
-          <Ionicons name="arrow-back" size={40} color="white" />
-        </TouchableOpacity>
-        <TouchableOpacity onPress={() => setIsPaused((prev) => !prev)}>
-          <Ionicons name={isPaused ? 'play' : 'pause'} size={40} color="white" />
-        </TouchableOpacity>
-        <TouchableOpacity onPress={nextPhase}>
-          <Ionicons name="arrow-forward" size={40} color="white" />
-        </TouchableOpacity>
-      </View>
+      <View style={styles.progressBarContainer}>
+  {/* Animación Lottie del Corredor */}
+  {isRunnerVisible && (
+    <Animated.View
+      style={[
+        styles.runner,
+        { left: `${(totalElapsed / totalDuration) * 100}%` },
+      ]}
+    >
+      <LottieView
+        source={require('../assets/images/run.json')}
+        autoPlay
+        loop
+        style={styles.lottieAnimation}
+      />
+    </Animated.View>
+  )}
+
+  {/* Barra de Progreso */}
+  <View style={styles.progressBarBackground}>
+    <View
+      style={{
+        ...styles.progressBar,
+        width: `${(totalElapsed / totalDuration) * 100}%`,
+      }}
+    />
+  </View>
+
+</View>
+<View>
+  {/* Contador de Tiempo Restante */}
+  <Text style={styles.remainingTime}>
+    {formatTime(totalDuration - totalElapsed)}
+  </Text>
+
+<View style={styles.controlButtons}>
+  <TouchableOpacity onPress={prevPhase}>
+    <Ionicons name="arrow-back" size={40} color="white" />
+  </TouchableOpacity>
+  <TouchableOpacity onPress={handlePauseResume}>
+    <Ionicons name={isPaused ? 'play' : 'pause'} size={40} color="white" />
+  </TouchableOpacity>
+  <TouchableOpacity onPress={nextPhase}>
+    <Ionicons name="arrow-forward" size={40} color="white" />
+  </TouchableOpacity>
+</View>
+</View>
+
+
+
     </View>
   );
 };
-
 
 const styles = StyleSheet.create({
   container: {
@@ -250,14 +386,13 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: 'bold',
     color: '#fff',
-    marginBottom: 20, // Espaciado hacia abajo
+    marginBottom: 20,
     textAlign: 'center',
   },
   donutContainer: {
     position: 'relative',
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 30, // Separación entre el donut y el siguiente elemento
   },
   circularProgressContainer: {
     position: 'absolute',
@@ -268,19 +403,56 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: 'bold',
     color: '#fff',
-    marginVertical: 20, // Espaciado superior e inferior
+    marginVertical: 20,
     textAlign: 'center',
   },
   controlButtons: {
     flexDirection: 'row',
-    justifyContent: 'space-between', // Espacio uniforme entre botones
+    justifyContent: 'space-between',
     alignItems: 'center',
-    width: '60%', // Tamaño ajustado del contenedor
-    alignSelf: 'center', // Centra el contenedor en el eje horizontal
+    width: '60%',
+    alignSelf: 'center',
     marginTop: 20,
+  
+  },
+  progressBar: {
+    height: '100%',
+    backgroundColor: '#00BFFF',
+  },
+
+  runner: {
+    position: 'absolute',
+    top: -8, // Posiciona la animación por encima de la barra
+    transform: [{ translateX: -35 }], // Centra el corredor sobre la barra
+    zIndex: 1, // Asegura que la animación esté por encima de la
+  },
+  lottieAnimation: {
+    width: 80,
+    height: 80, // Tamaño de la animación
+  },
+  progressBarContainer: {
+    width: '80%',
+    height: 50, // Altura suficiente para la barra y la animación
+    justifyContent: 'center',
+    alignItems: 'center',
+    position: 'relative', // Necesario para posicionar elementos hijos con "absolute"
+  },
+  progressBarBackground: {
+    width: '100%',
+    height: 10,
+    backgroundColor: '#ccc',
+    borderRadius: 5,
+    overflow: 'hidden',
+    position: 'absolute', // Permite que la barra esté detrás del corredor
+    bottom: 0, // Mantiene la barra en la parte inferior del contenedor
+  },
+  remainingTime: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#fff',
+    marginTop: 10, // Espaciado entre la barra y el contador
+    textAlign: 'center',
   },
 });
-
-
 
 export default StartContainer;
