@@ -2,10 +2,10 @@ import React, { useEffect, useState, useRef, useMemo } from 'react';
 import { View, StyleSheet, Text, TouchableOpacity, Animated } from 'react-native';
 import CircularProgress from 'react-native-circular-progress-indicator';
 import Svg, { Path } from 'react-native-svg';
-import Total from './Total';
 import { Ionicons } from '@expo/vector-icons';
-import { interpolate } from 'react-native-reanimated';
-import LottieView from 'lottie-react-native';
+import CircularProgress2 from '../components/CirculasProgress';
+import ProgressBar from './ProgressBar';
+
 
 interface StartContainerProps {
   title: string;
@@ -51,22 +51,34 @@ const StartContainer: React.FC<StartContainerProps> = ({
 
   const phases = useMemo(() => {
     const phaseList: Phase[] = [];
-    phaseList.push('prepare');
-    for (let set = 1; set <= sets; set++) {
-      for (let round = 1; round <= rounds; round++) {
-        phaseList.push('work', 'rest');
+    phaseList.push('prepare'); // Fase inicial de preparación
+  
+    for (let set = 0; set < sets; set++) {
+      for (let round = 0; round < rounds; round++) {
+        phaseList.push('work');
+        // Agregar descanso solo si no es la última ronda del set
+        if (round < rounds - 1) {
+          phaseList.push('rest');
+        }
       }
-      if (set < sets) {
+      // Agregar descanso entre sets si no es el último set
+      if (set < sets - 1) {
         phaseList.push('restSet');
       }
     }
-    phaseList.push('done');
+  
+    phaseList.push('done'); // Fase final
     return phaseList;
   }, [rounds, sets]);
+  
 
   const totalDuration = useMemo(() => {
-    return prepare + sets * (rounds * (workTime + restTime) + restSet) - restSet;
+    const workAndRestTime = sets * rounds * workTime + sets * (rounds - 1) * restTime;
+    const restSetDuration = (sets - 1) * restSet;
+    return prepare + workAndRestTime + restSetDuration;
   }, [prepare, workTime, restTime, rounds, sets, restSet]);
+  
+
 
   const totalElapsed = useMemo(() => {
     return phases.slice(0, phaseIndex).reduce((sum, phase) => sum + getPhaseDuration(phase), 0) + (getPhaseDuration(phases[phaseIndex]) - progress);
@@ -78,9 +90,11 @@ const StartContainer: React.FC<StartContainerProps> = ({
     if (newIndex < 0 || newIndex >= phases.length) return;
     const newPhase = phases[newIndex];
     setPhaseIndex(newIndex);
-    setProgress(getPhaseDuration(newPhase));
-    setRemainingTime(null);
+    setProgress(getPhaseDuration(newPhase)); // Establece la duración correcta
+    setRemainingTime(null); // Reinicia el tiempo restante
   };
+  
+  
 
   const nextPhase = () => updatePhase(phaseIndex + 1);
   const prevPhase = () => updatePhase(phaseIndex - 1);
@@ -132,33 +146,44 @@ const StartContainer: React.FC<StartContainerProps> = ({
 
   const { currentSet, currentRound } = useMemo(() => {
     let currentSet = 1;
-    let currentRound = 1;
-
-    for (let i = 1; i <= phaseIndex; i++) {
+    let currentRound = 0;
+  
+    for (let i = 0; i <= phaseIndex; i++) {
       const phase = phases[i];
       if (phase === 'restSet') {
         currentSet++;
-        currentRound = 1;
+        currentRound = 0; // Reiniciar la ronda en un nuevo set
       } else if (phase === 'work') {
         currentRound++;
       }
     }
-
+  
     return { currentSet, currentRound };
   }, [phaseIndex, phases]);
+  
+  
 
   const pieData = useMemo(() => {
-    return Array(rounds)
-      .fill(null)
-      .map((_, index) => ({
-        color:
-          phases[phaseIndex] === 'prepare' || phases[phaseIndex] === 'restSet'
-            ? '#ccc'
-            : index < currentRound - 1
-            ? 'rgb(255, 196, 0)'
-            : '#ccc',
-      }));
-  }, [phases, phaseIndex, currentRound, rounds]);
+  return Array(rounds).fill(null).map((_, index) => {
+    const currentPhase = phases[phaseIndex];
+
+    if (currentPhase === 'prepare' || currentPhase === 'restSet') {
+      // Todos los donuts grises durante prepare/restSet
+      return { color: '#ccc' };
+    }
+
+    if (currentPhase === 'work' || currentPhase === 'rest') {
+      // Iluminar los donuts completados o el actual si es work
+      return {
+        color: index < currentRound ? 'rgb(255, 196, 0)' : '#ccc',
+      };
+    }
+
+    // Default (done or other states)
+    return { color: '#ccc' };
+  });
+}, [phases, phaseIndex, currentRound, rounds]);
+
 
   const renderDonut = useMemo(() => {
     const radius = 100;
@@ -294,65 +319,27 @@ const StartContainer: React.FC<StartContainerProps> = ({
       
       <View style={styles.donutContainer}>
         {renderDonut}
+
         <View style={styles.circularProgressContainer}>
-          <CircularProgress
-            key={phases[phaseIndex]}
-            value={progress}
-            maxValue={getPhaseDuration(phases[phaseIndex])}
-            radius={80}
-            activeStrokeWidth={15}
-            inActiveStrokeWidth={10}
-            activeStrokeColor={getActiveStrokeColor(
-              phases[phaseIndex],
-              progress,
-              getPhaseDuration(phases[phaseIndex])
-            )}
-            inActiveStrokeColor="#2f525f"
-            circleBackgroundColor="transparent"
-            title={phases[phaseIndex].toUpperCase()}
-            subtitle={`Ronda ${currentRound}`}
-            titleColor="#fff"
-            subtitleColor="#fff"
-            progressValueColor="#fff"
-            duration={0}
-          />
+        
+  <CircularProgress2
+    size={160}
+    strokeWidth={10}
+    strokeWidth2={10}
+    progress={progress}
+    maxValue={getPhaseDuration(phases[phaseIndex])}
+    phase={phases[phaseIndex]}
+    currentRound={currentRound}
+    totalRounds={rounds}
+    remainingTime={Math.floor(progress)}
+  />
+
         </View>
       </View>
       <Text style={styles.sets}>{`Set ${currentSet}/${sets}`}</Text>
-      <View style={styles.progressBarContainer}>
-  {/* Animación Lottie del Corredor */}
-  {isRunnerVisible && (
-    <Animated.View
-      style={[
-        styles.runner,
-        { left: `${(totalElapsed / totalDuration) * 100}%` },
-      ]}
-    >
-      <LottieView
-        source={require('../assets/images/run.json')}
-        autoPlay
-        loop
-        style={styles.lottieAnimation}
-      />
-    </Animated.View>
-  )}
 
-  {/* Barra de Progreso */}
-  <View style={styles.progressBarBackground}>
-    <View
-      style={{
-        ...styles.progressBar,
-        width: `${(totalElapsed / totalDuration) * 100}%`,
-      }}
-    />
-  </View>
-
-</View>
 <View>
-  {/* Contador de Tiempo Restante */}
-  <Text style={styles.remainingTime}>
-    {formatTime(totalDuration - totalElapsed)}
-  </Text>
+ 
 
 <View style={styles.controlButtons}>
   <TouchableOpacity onPress={prevPhase}>
@@ -367,7 +354,11 @@ const StartContainer: React.FC<StartContainerProps> = ({
 </View>
 </View>
 
-
+<ProgressBar
+  totalDuration={totalDuration}
+  totalElapsed={totalElapsed}
+  isPaused={isPaused}
+/>
 
     </View>
   );
@@ -399,6 +390,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
+  
   sets: {
     fontSize: 20,
     fontWeight: 'bold',
@@ -437,6 +429,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     position: 'relative', // Necesario para posicionar elementos hijos con "absolute"
   },
+
   progressBarBackground: {
     width: '100%',
     height: 10,
